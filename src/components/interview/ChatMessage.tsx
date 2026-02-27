@@ -1,5 +1,6 @@
 "use client";
 
+import { memo } from "react";
 import { motion } from "framer-motion";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -11,7 +12,7 @@ interface ChatMessageProps {
     isStreaming?: boolean;
 }
 
-export default function ChatMessage({
+function ChatMessage({
     role,
     content,
     isStreaming = false,
@@ -59,3 +60,7 @@ export default function ChatMessage({
         </motion.div>
     );
 }
+
+// Optimization: Memoize ChatMessage to prevent unnecessary re-renders
+// of previous messages when new messages are added or during streaming.
+export default memo(ChatMessage);
