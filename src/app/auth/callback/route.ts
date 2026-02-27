@@ -47,7 +47,7 @@ export async function GET(request: Request) {
   }
 
   // No profile row yet, or onboarding has not been completed
-  if (!profile?.onboarded) {
+  if (!profile?.onboarding_completed) {
     return NextResponse.redirect(`${origin}/onboarding`);
   }
 

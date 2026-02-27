@@ -1,53 +1,30 @@
-export type InterviewDifficulty = "junior" | "mid" | "senior" | "staff";
+export type InterviewType = "dsa" | "system_design" | "behavioral" | "sql";
 
-export type InterviewType =
-  | "behavioral"
-  | "technical"
-  | "system-design"
-  | "coding"
-  | "mixed";
+export type InterviewDifficulty = "easy" | "medium" | "hard";
 
-export type InterviewStatus = "pending" | "in_progress" | "completed";
+export type InterviewStatus = "in_progress" | "completed" | "abandoned";
 
-export interface InterviewMessage {
+export interface ChatMessage {
+  id: string;
   role: "user" | "assistant";
   content: string;
-  timestamp: Date;
+  timestamp: number;
 }
 
 export interface InterviewConfig {
-  jobRole: string;
-  difficulty: InterviewDifficulty;
   interviewType: InterviewType;
-  targetCompany?: string;
+  difficulty: InterviewDifficulty;
+  companyContext: string | null;
   durationMinutes: number;
 }
 
 export interface InterviewScore {
-  overallScore: number;
-  technicalScore: number;
-  communicationScore: number;
-  problemSolvingScore: number;
+  score_technical: number;
+  score_communication: number;
+  score_problem_solving: number;
+  score_time_management: number;
+  overall_score: number;
+  feedback_summary: string;
   strengths: string[];
   improvements: string[];
-  feedback: string;
-}
-
-export interface InterviewSession {
-  id: string;
-  config: InterviewConfig;
-  messages: InterviewMessage[];
-  score: InterviewScore | null;
-  status: InterviewStatus;
-  startedAt: Date | null;
-  completedAt: Date | null;
-}
-
-export interface SalaryData {
-  median: number;
-  low: number;
-  high: number;
-  currency: string;
-  marketTrend: "rising" | "stable" | "declining";
-  insights: string[];
 }

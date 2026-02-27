@@ -1,77 +1,93 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import type {
-  InterviewConfig,
-  InterviewMessage,
-  InterviewScore,
-  InterviewStatus,
-} from "@/types/interview";
+import type { ChatMessage, InterviewConfig } from "@/types/interview";
 
 interface InterviewState {
+  // Session
+  sessionId: string | null;
   config: InterviewConfig | null;
-  messages: InterviewMessage[];
-  score: InterviewScore | null;
-  status: InterviewStatus;
-  isLoading: boolean;
-  startedAt: Date | null;
-  completedAt: Date | null;
+
+  // Messages
+  messages: ChatMessage[];
+  isStreaming: boolean;
+  streamingContent: string;
+
+  // Timer
+  elapsedSeconds: number;
+  isTimerRunning: boolean;
+
+  // Code editor
+  editorCode: string;
+  editorLanguage: string;
+
+  // Actions
+  setSession: (sessionId: string, config: InterviewConfig) => void;
+  addMessage: (message: ChatMessage) => void;
+  setStreaming: (streaming: boolean) => void;
+  appendStreamingContent: (chunk: string) => void;
+  finalizeStreamingMessage: () => void;
+  clearStreamingContent: () => void;
+  incrementTimer: () => void;
+  setTimerRunning: (running: boolean) => void;
+  setEditorCode: (code: string) => void;
+  setEditorLanguage: (lang: string) => void;
+  reset: () => void;
 }
 
-interface InterviewActions {
-  setConfig: (config: InterviewConfig) => void;
-  addMessage: (message: InterviewMessage) => void;
-  setScore: (score: InterviewScore) => void;
-  setLoading: (loading: boolean) => void;
-  setStatus: (status: InterviewStatus) => void;
-  startInterview: () => void;
-  completeInterview: () => void;
-  resetInterview: () => void;
-}
-
-const initialState: InterviewState = {
-  config: null,
-  messages: [],
-  score: null,
-  status: "pending",
-  isLoading: false,
-  startedAt: null,
-  completedAt: null,
+const INITIAL_STATE = {
+  sessionId: null as string | null,
+  config: null as InterviewConfig | null,
+  messages: [] as ChatMessage[],
+  isStreaming: false,
+  streamingContent: "",
+  elapsedSeconds: 0,
+  isTimerRunning: false,
+  editorCode: "",
+  editorLanguage: "python",
 };
 
-export const useInterviewStore = create<InterviewState & InterviewActions>()(
-  persist(
-    (set) => ({
-      ...initialState,
+export const useInterviewStore = create<InterviewState>((set, get) => ({
+  ...INITIAL_STATE,
 
-      setConfig: (config) => set({ config }),
+  setSession: (sessionId, config) => set({ sessionId, config }),
 
-      addMessage: (message) =>
-        set((state) => ({ messages: [...state.messages, message] })),
+  addMessage: (message) =>
+    set((state) => ({ messages: [...state.messages, message] })),
 
-      setScore: (score) => set({ score }),
+  setStreaming: (streaming) => set({ isStreaming: streaming }),
 
-      setLoading: (isLoading) => set({ isLoading }),
+  appendStreamingContent: (chunk) =>
+    set((state) => ({
+      streamingContent: state.streamingContent + chunk,
+    })),
 
-      setStatus: (status) => set({ status }),
+  finalizeStreamingMessage: () => {
+    const { streamingContent } = get();
+    if (!streamingContent) return;
 
-      startInterview: () =>
-        set({ status: "in_progress", startedAt: new Date() }),
+    const message: ChatMessage = {
+      id: `assistant-${Date.now()}`,
+      role: "assistant",
+      content: streamingContent,
+      timestamp: Date.now(),
+    };
 
-      completeInterview: () =>
-        set({ status: "completed", completedAt: new Date() }),
+    set((state) => ({
+      messages: [...state.messages, message],
+      streamingContent: "",
+      isStreaming: false,
+    }));
+  },
 
-      resetInterview: () => set(initialState),
-    }),
-    {
-      name: "interview-session",
-      partialize: (state) => ({
-        config: state.config,
-        messages: state.messages,
-        score: state.score,
-        status: state.status,
-        startedAt: state.startedAt,
-        completedAt: state.completedAt,
-      }),
-    }
-  )
-);
+  clearStreamingContent: () => set({ streamingContent: "" }),
+
+  incrementTimer: () =>
+    set((state) => ({ elapsedSeconds: state.elapsedSeconds + 1 })),
+
+  setTimerRunning: (running) => set({ isTimerRunning: running }),
+
+  setEditorCode: (code) => set({ editorCode: code }),
+
+  setEditorLanguage: (lang) => set({ editorLanguage: lang }),
+
+  reset: () => set({ ...INITIAL_STATE }),
+}));
