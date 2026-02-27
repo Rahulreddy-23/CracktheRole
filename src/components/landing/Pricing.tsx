@@ -215,10 +215,19 @@ function PricingCard({ plan, onPaidClick }: PricingCardProps) {
                 {plan.features.map((feature) => (
                     <li key={feature.text} className="flex items-start gap-3 text-sm">
                         {feature.included ? (
-                            <Check className="w-4 h-4 text-brand-success shrink-0 mt-0.5" />
+                            <Check
+                                className="w-4 h-4 text-brand-success shrink-0 mt-0.5"
+                                aria-hidden="true"
+                            />
                         ) : (
-                            <X className="w-4 h-4 text-text-secondary/40 shrink-0 mt-0.5" />
+                            <X
+                                className="w-4 h-4 text-text-secondary/40 shrink-0 mt-0.5"
+                                aria-hidden="true"
+                            />
                         )}
+                        <span className="sr-only">
+                            {feature.included ? "Included: " : "Not included: "}
+                        </span>
                         <span
                             className={
                                 feature.included
