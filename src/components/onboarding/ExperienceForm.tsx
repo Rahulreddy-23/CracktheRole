@@ -74,9 +74,9 @@ export default function ExperienceForm({
                             type="number"
                             min={0}
                             max={100}
-                            value={data.currentCtc || ""}
+                            value={data.currentCtc === 0 ? "" : data.currentCtc}
                             onChange={(e) =>
-                                update({ currentCtc: Number(e.target.value) || 0 })
+                                update({ currentCtc: e.target.value === "" ? 0 : Number(e.target.value) })
                             }
                             placeholder="e.g. 12"
                             className="bg-surface border-border/60 text-text-primary h-11 flex-1"
@@ -108,9 +108,9 @@ export default function ExperienceForm({
                             type="number"
                             min={0}
                             max={100}
-                            value={data.targetCtc || ""}
+                            value={data.targetCtc === 0 ? "" : data.targetCtc}
                             onChange={(e) =>
-                                update({ targetCtc: Number(e.target.value) || 0 })
+                                update({ targetCtc: e.target.value === "" ? 0 : Number(e.target.value) })
                             }
                             placeholder="e.g. 40"
                             className={`bg-surface border-border/60 text-text-primary h-11 flex-1 ${ctcError ? "border-brand-danger" : ""

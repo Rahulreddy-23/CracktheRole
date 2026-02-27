@@ -11,6 +11,7 @@ import {
     ArrowRight,
     Loader2,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
 import {
     Select,
@@ -106,7 +107,14 @@ export default function InterviewSetup() {
             const supabase = createClient();
             const {
                 data: { user },
+                error: authError,
             } = await supabase.auth.getUser();
+
+            if (authError || !user) {
+                toast.error("You must be signed in to start an interview.");
+                setIsStarting(false);
+                return;
+            }
 
             const company = companyContext === "general" ? null : companyContext;
 
@@ -114,7 +122,7 @@ export default function InterviewSetup() {
             const { data: session, error } = await supabase
                 .from("interview_sessions")
                 .insert({
-                    user_id: user?.id ?? "dev-bypass-user-id",
+                    user_id: user.id,
                     interview_type: interviewType,
                     difficulty,
                     company_context: company,
@@ -123,7 +131,12 @@ export default function InterviewSetup() {
                 .select("id")
                 .single();
 
-            if (error) throw error;
+            if (error) {
+                console.error("Session creation error:", error);
+                toast.error("Failed to create session. Please try again.");
+                setIsStarting(false);
+                return;
+            }
 
             const config = {
                 interviewType,
@@ -136,6 +149,7 @@ export default function InterviewSetup() {
             router.push(`/interview/session?id=${session.id}`);
         } catch (err) {
             console.error("Failed to start interview:", err);
+            toast.error("Something went wrong. Please try again.");
             setIsStarting(false);
         }
     }

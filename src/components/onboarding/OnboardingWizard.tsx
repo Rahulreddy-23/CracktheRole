@@ -101,12 +101,12 @@ export default function OnboardingWizard() {
                 toast.error("Please select your years of experience.");
                 return false;
             }
-            if (
-                experience.targetCtc > 0 &&
-                experience.currentCtc > 0 &&
-                experience.targetCtc <= experience.currentCtc
-            ) {
+            if (experience.targetCtc <= experience.currentCtc && experience.currentCtc > 0) {
                 setCtcError("Target CTC must be greater than current CTC.");
+                return false;
+            }
+            if (experience.targetCtc === 0) {
+                setCtcError("Please enter a Target CTC.");
                 return false;
             }
             setCtcError("");
@@ -134,24 +134,30 @@ export default function OnboardingWizard() {
 
         setSaving(true);
         try {
-            const supabase = createClient();
-            const { error } = await supabase
-                .from("profiles")
-                .update({
-                    target_role: targetRole,
-                    target_companies: targetCompanies,
-                    current_ctc: experience.currentCtc,
-                    target_ctc: experience.targetCtc,
-                    experience_years: parseExperienceYears(experience.experienceYears),
-                    prep_timeline: experience.prepTimeline,
-                    onboarding_completed: true,
-                    updated_at: new Date().toISOString(),
-                })
-                .eq("id", user.id);
+            // Check for DEV bypass
+            if (process.env.NEXT_PUBLIC_DEV_BYPASS === "true") {
+                // Simulate network delay
+                await new Promise((resolve) => setTimeout(resolve, 600));
+            } else {
+                const supabase = createClient();
+                const { error } = await supabase
+                    .from("profiles")
+                    .update({
+                        target_role: targetRole,
+                        target_companies: targetCompanies,
+                        current_ctc: experience.currentCtc,
+                        target_ctc: experience.targetCtc,
+                        experience_years: parseExperienceYears(experience.experienceYears),
+                        prep_timeline: experience.prepTimeline,
+                        onboarding_completed: true,
+                        updated_at: new Date().toISOString(),
+                    })
+                    .eq("id", user.id);
 
-            if (error) {
-                toast.error("Failed to save your preferences. Please try again.");
-                return;
+                if (error) {
+                    toast.error("Failed to save your preferences. Please try again.");
+                    return;
+                }
             }
 
             toast.success("Welcome aboard! Let us start preparing.");

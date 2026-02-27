@@ -231,6 +231,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      salary_entries: {
+        Row: {
+          id: string;
+          company: string;
+          role: string;
+          experience_years: number;
+          base_salary: number;
+          bonus: number;
+          esop_value: number;
+          total_ctc: number;
+          city: string;
+          verified: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          company: string;
+          role: string;
+          experience_years: number;
+          base_salary: number;
+          bonus?: number;
+          esop_value?: number;
+          total_ctc: number;
+          city?: string;
+          verified?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          company?: string;
+          role?: string;
+          experience_years?: number;
+          base_salary?: number;
+          bonus?: number;
+          esop_value?: number;
+          total_ctc?: number;
+          city?: string;
+          verified?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       waitlist: {
         Row: {
           id: string;
