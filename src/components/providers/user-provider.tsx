@@ -51,10 +51,6 @@ export function UserProvider({
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      // In dev bypass mode there is no real session, so skip overwriting
-      // the server-provided initialUser/initialProfile.
-      if (!session?.user && initialProfile) return;
-
       setUser(session?.user ?? null);
 
       if (session?.user) {
@@ -70,7 +66,6 @@ export function UserProvider({
 
       if (event === "SIGNED_OUT") {
         router.push("/login");
-        router.refresh();
       }
 
       if (event === "TOKEN_REFRESHED") {

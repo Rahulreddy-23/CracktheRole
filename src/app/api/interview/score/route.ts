@@ -1,37 +1,104 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { createClient } from "@/lib/supabase/server";
+import { scoreRequestSchema, formatZodErrors } from "@/lib/validations/api-schemas";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-const DEV_BYPASS = process.env.NEXT_PUBLIC_DEV_BYPASS === "true";
+
+// Define the scorecard tool schema for structured output via Tool Use
+const SCORECARD_TOOL: Anthropic.Messages.Tool = {
+  name: "submit_scorecard",
+  description:
+    "Submit the final scorecard for an interview session. Call this tool with the scores and feedback after analyzing the transcript.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      score_technical: {
+        type: "number",
+        description: "Technical skill score from 0 to 100",
+      },
+      score_communication: {
+        type: "number",
+        description: "Communication skill score from 0 to 100",
+      },
+      score_problem_solving: {
+        type: "number",
+        description: "Problem-solving ability score from 0 to 100",
+      },
+      score_time_management: {
+        type: "number",
+        description: "Time management score from 0 to 100",
+      },
+      overall_score: {
+        type: "number",
+        description: "Overall interview score from 0 to 100",
+      },
+      feedback_summary: {
+        type: "string",
+        description: "A 2-3 sentence summary of the candidate's performance",
+      },
+      strengths: {
+        type: "array",
+        items: { type: "string" },
+        description: "List of 3 key strengths demonstrated",
+      },
+      improvements: {
+        type: "array",
+        items: { type: "string" },
+        description: "List of 3 areas for improvement",
+      },
+    },
+    required: [
+      "score_technical",
+      "score_communication",
+      "score_problem_solving",
+      "score_time_management",
+      "overall_score",
+      "feedback_summary",
+      "strengths",
+      "improvements",
+    ],
+  },
+};
+
+interface ScorecardInput {
+  score_technical: number;
+  score_communication: number;
+  score_problem_solving: number;
+  score_time_management: number;
+  overall_score: number;
+  feedback_summary: string;
+  strengths: string[];
+  improvements: string[];
+}
 
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Auth check (skip in dev bypass mode)
-    if (!DEV_BYPASS) {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+    // Auth check
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-      if (!user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
-    const { sessionId } = body;
+    const parsed = scoreRequestSchema.safeParse(body);
 
-    if (!sessionId) {
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Missing sessionId" },
+        { error: formatZodErrors(parsed.error) },
         { status: 400 }
       );
     }
+
+    const { sessionId } = parsed.data;
 
     // Fetch the session conversation from the database
     const { data: session, error: fetchError } = await supabase
@@ -64,38 +131,27 @@ export async function POST(request: NextRequest) {
 Interview Transcript:
 ${transcript}
 
-Provide a JSON response with EXACTLY this structure (no markdown, no code fences, just raw JSON):
-{
-  "score_technical": <number 0-100>,
-  "score_communication": <number 0-100>,
-  "score_problem_solving": <number 0-100>,
-  "score_time_management": <number 0-100>,
-  "overall_score": <number 0-100>,
-  "feedback_summary": "<2-3 sentence summary>",
-  "strengths": ["<strength 1>", "<strength 2>", "<strength 3>"],
-  "improvements": ["<area 1>", "<area 2>", "<area 3>"]
-}`;
+Use the submit_scorecard tool to submit your evaluation.`;
 
+    // Use Tool Use to get guaranteed structured JSON output
     const response = await anthropic.messages.create({
       model: "claude-sonnet-4-6",
       max_tokens: 1024,
+      tools: [SCORECARD_TOOL],
+      tool_choice: { type: "tool", name: "submit_scorecard" },
       messages: [{ role: "user", content: scoringPrompt }],
     });
 
-    const content = response.content[0];
-    if (content.type !== "text") {
-      throw new Error("Unexpected response type");
+    // Extract the tool use result — guaranteed to be structured JSON
+    const toolUseBlock = response.content.find(
+      (block) => block.type === "tool_use"
+    );
+
+    if (!toolUseBlock || toolUseBlock.type !== "tool_use") {
+      throw new Error("Claude did not return a tool_use response");
     }
 
-    // Parse the JSON from Claude's response (handle potential markdown fences)
-    let jsonText = content.text.trim();
-    if (jsonText.startsWith("```")) {
-      jsonText = jsonText
-        .replace(/^```(?:json)?\n?/, "")
-        .replace(/\n?```$/, "");
-    }
-
-    const scoreData = JSON.parse(jsonText);
+    const scoreData = toolUseBlock.input as ScorecardInput;
 
     // Update the session with scores and mark as completed
     const { error: updateError } = await supabase

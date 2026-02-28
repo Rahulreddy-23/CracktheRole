@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-const DEV_BYPASS = process.env.NEXT_PUBLIC_DEV_BYPASS === "true";
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,18 +8,16 @@ export async function GET(request: NextRequest) {
 
     let userId: string | null = null;
 
-    if (!DEV_BYPASS) {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
-      if (authError || !user) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-      }
-
-      userId = user.id;
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    userId = user.id;
 
     const { searchParams } = request.nextUrl;
     const search = searchParams.get("search") || "";

@@ -97,15 +97,18 @@ CREATE TABLE public.challenge_completions (
 );
 
 -- Auto-create profile on signup
+-- Uses COALESCE to handle Magic Link / email signups where
+-- raw_user_meta_data may not contain full_name or avatar_url.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
   INSERT INTO public.profiles (id, full_name, avatar_url)
   VALUES (
     NEW.id,
-    NEW.raw_user_meta_data->>'full_name',
-    NEW.raw_user_meta_data->>'avatar_url'
-  );
+    COALESCE(NEW.raw_user_meta_data->>'full_name', NULL),
+    COALESCE(NEW.raw_user_meta_data->>'avatar_url', NULL)
+  )
+  ON CONFLICT (id) DO NOTHING;
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

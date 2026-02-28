@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { bookmarkRequestSchema, formatZodErrors } from "@/lib/validations/api-schemas";
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,17 +16,16 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { questionId, action } = body as {
-      questionId: string;
-      action: "add" | "remove";
-    };
+    const parsed = bookmarkRequestSchema.safeParse(body);
 
-    if (!questionId || !action) {
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: "Missing required fields: questionId, action" },
+        { error: formatZodErrors(parsed.error) },
         { status: 400 }
       );
     }
+
+    const { questionId, action } = parsed.data;
 
     if (action === "add") {
       const { error } = await supabase.from("bookmarks").upsert(

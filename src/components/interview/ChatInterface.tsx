@@ -5,30 +5,10 @@ import { Send, Code2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ChatMessage from "@/components/interview/ChatMessage";
 import { useInterviewStore } from "@/stores/interview-store";
-import type { ChatMessage as ChatMessageType, InterviewType } from "@/types/interview";
+import type { ChatMessage as ChatMessageType } from "@/types/interview";
 
 interface ChatInterfaceProps {
-    interviewType: InterviewType;
-}
-
-function buildSystemPrompt(
-    type: InterviewType,
-    difficulty: string,
-    company: string
-): string {
-    const companyLabel = company || "a top tech company";
-
-    const prompts: Record<string, string> = {
-        dsa: `You are a senior software engineer conducting a technical DSA interview at ${companyLabel}. Ask one algorithmic problem appropriate for ${difficulty} level. After the candidate responds, ask follow-up questions about time/space complexity, edge cases, and optimizations. Be professional but challenging. If the candidate is stuck, give small hints. At the end, evaluate their approach. Format code examples in markdown code blocks.`,
-
-        system_design: `You are a senior architect conducting a system design interview at ${companyLabel}. Present a system design problem appropriate for ${difficulty} level. Guide the candidate through requirements gathering, high-level design, component details, and scaling considerations. Ask probing questions about trade-offs. Use markdown formatting for diagrams and lists.`,
-
-        behavioral: `You are an HR manager conducting a behavioral interview at ${companyLabel}. Ask STAR-format behavioral questions about leadership, conflict resolution, failure, and ambition. Follow up on each answer with probing questions. Be warm but thorough. Ask one question at a time and wait for the candidate to respond before asking the next.`,
-
-        sql: `You are a data engineering interviewer at ${companyLabel}. Present SQL problems appropriate for ${difficulty} level involving JOINs, window functions, CTEs, aggregations, and query optimization. Ask the candidate to write queries and explain their approach. Format SQL examples in markdown code blocks with sql syntax highlighting.`,
-    };
-
-    return prompts[type] || prompts.dsa;
+    interviewType: string;
 }
 
 export default function ChatInterface({ interviewType }: ChatInterfaceProps) {
@@ -83,12 +63,6 @@ export default function ChatInterface({ interviewType }: ChatInterfaceProps) {
                 { role: "user" as const, content: content.trim() },
             ];
 
-            const systemPrompt = buildSystemPrompt(
-                config.interviewType,
-                config.difficulty,
-                config.companyContext ?? ""
-            );
-
             try {
                 const response = await fetch("/api/interview/chat", {
                     method: "POST",
@@ -96,10 +70,6 @@ export default function ChatInterface({ interviewType }: ChatInterfaceProps) {
                     body: JSON.stringify({
                         sessionId,
                         messages: conversationHistory,
-                        systemPrompt,
-                        interviewType: config.interviewType,
-                        difficulty: config.difficulty,
-                        companyContext: config.companyContext,
                     }),
                 });
 
@@ -156,12 +126,6 @@ export default function ChatInterface({ interviewType }: ChatInterfaceProps) {
             setStreaming(true);
             clearStreamingContent();
 
-            const systemPrompt = buildSystemPrompt(
-                config.interviewType,
-                config.difficulty,
-                config.companyContext ?? ""
-            );
-
             try {
                 const response = await fetch("/api/interview/chat", {
                     method: "POST",
@@ -175,10 +139,6 @@ export default function ChatInterface({ interviewType }: ChatInterfaceProps) {
                                     "Hello, I am ready for the interview. Please begin.",
                             },
                         ],
-                        systemPrompt,
-                        interviewType: config.interviewType,
-                        difficulty: config.difficulty,
-                        companyContext: config.companyContext,
                     }),
                 });
 

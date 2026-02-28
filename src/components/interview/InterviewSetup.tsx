@@ -102,21 +102,25 @@ export default function InterviewSetup() {
         setIsStarting(true);
 
         try {
+            console.log("Starting interview setup...");
             resetStore();
 
             const supabase = createClient();
+            console.log("Fetching user...");
             const {
                 data: { user },
                 error: authError,
             } = await supabase.auth.getUser();
 
             if (authError || !user) {
+                console.error("Auth error:", authError);
                 toast.error("You must be signed in to start an interview.");
                 setIsStarting(false);
                 return;
             }
 
             const company = companyContext === "general" ? null : companyContext;
+            console.log("Inserting session into DB for user", user.id);
 
             // Create interview session in Supabase
             const { data: session, error } = await supabase
@@ -137,6 +141,7 @@ export default function InterviewSetup() {
                 setIsStarting(false);
                 return;
             }
+            console.log("Session created successfully:", session.id);
 
             const config = {
                 interviewType,

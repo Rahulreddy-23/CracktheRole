@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { salaryPostSchema, formatZodErrors } from "@/lib/validations/api-schemas";
 
 // GET /api/salary?company=&role=&min_exp=&max_exp=&city=
 export async function GET(request: NextRequest) {
@@ -70,23 +71,18 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const {
-      company,
-      role,
-      experience_years,
-      base_salary,
-      bonus,
-      esop_value,
-      total_ctc,
-      city,
-    } = body;
+    const parsed = salaryPostSchema.safeParse(body);
 
-    // Basic validation
-    if (!company || !role || experience_years === undefined || !base_salary || !total_ctc) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: formatZodErrors(parsed.error) },
+        { status: 400 }
+      );
     }
 
-    const expectedTotal = base_salary + (bonus ?? 0) + (esop_value ?? 0);
+    const { company, role, experience_years, base_salary, bonus, esop_value, total_ctc, city } = parsed.data;
+
+    const expectedTotal = base_salary + bonus + esop_value;
     if (Math.abs(expectedTotal - total_ctc) > 1) {
       return NextResponse.json(
         { error: "Total CTC must equal Base + Bonus + ESOP" },
@@ -99,10 +95,10 @@ export async function POST(request: NextRequest) {
       role,
       experience_years,
       base_salary,
-      bonus: bonus ?? 0,
-      esop_value: esop_value ?? 0,
+      bonus,
+      esop_value,
       total_ctc,
-      city: city ?? "bangalore",
+      city,
     });
 
     if (error) {

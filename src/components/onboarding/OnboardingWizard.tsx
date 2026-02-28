@@ -134,35 +134,28 @@ export default function OnboardingWizard() {
 
         setSaving(true);
         try {
-            // Check for DEV bypass
-            if (process.env.NEXT_PUBLIC_DEV_BYPASS === "true") {
-                // Simulate network delay
-                await new Promise((resolve) => setTimeout(resolve, 600));
-            } else {
-                const supabase = createClient();
-                const { error } = await supabase
-                    .from("profiles")
-                    .update({
-                        target_role: targetRole,
-                        target_companies: targetCompanies,
-                        current_ctc: experience.currentCtc,
-                        target_ctc: experience.targetCtc,
-                        experience_years: parseExperienceYears(experience.experienceYears),
-                        prep_timeline: experience.prepTimeline,
-                        onboarding_completed: true,
-                        updated_at: new Date().toISOString(),
-                    })
-                    .eq("id", user.id);
+            const supabase = createClient();
+            const { error } = await supabase
+                .from("profiles")
+                .update({
+                    target_role: targetRole,
+                    target_companies: targetCompanies,
+                    current_ctc: experience.currentCtc,
+                    target_ctc: experience.targetCtc,
+                    experience_years: parseExperienceYears(experience.experienceYears),
+                    prep_timeline: experience.prepTimeline,
+                    onboarding_completed: true,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq("id", user.id);
 
-                if (error) {
-                    toast.error("Failed to save your preferences. Please try again.");
-                    return;
-                }
+            if (error) {
+                toast.error("Failed to save your preferences. Please try again.");
+                return;
             }
 
             toast.success("Welcome aboard! Let us start preparing.");
             router.push("/dashboard");
-            router.refresh();
         } catch {
             toast.error("Something went wrong. Please try again.");
         } finally {

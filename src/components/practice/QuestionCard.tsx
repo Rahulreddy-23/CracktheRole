@@ -90,66 +90,76 @@ export default function QuestionCard({
       className="rounded-xl border border-border/40 bg-surface overflow-hidden hover:border-border/60 transition-colors duration-150"
     >
       {/* Collapsed header — always visible */}
-      <button
-        onClick={() => setIsExpanded((prev) => !prev)}
-        className="w-full text-left px-4 py-3.5 flex items-center gap-3 min-w-0"
-      >
-        {/* Expand/collapse indicator */}
-        <ChevronDown
-          className={cn(
-            "w-4 h-4 text-text-secondary/40 shrink-0 transition-transform duration-200",
-            isExpanded && "rotate-180"
-          )}
-        />
-
-        {/* Question title */}
-        <span className="text-sm font-medium text-text-primary flex-1 min-w-0 truncate text-left">
-          {question.title}
-        </span>
-
-        {/* Solved indicator */}
-        {isSolved && (
-          <CheckCircle2 className="w-4 h-4 text-brand-success shrink-0" />
-        )}
-
-        {/* Category badge (hidden on small screens) */}
-        {cat && (
-          <Badge
-            variant="outline"
+      <div className="w-full flex items-center justify-between px-4 py-3.5 gap-3 min-w-0">
+        <div
+          onClick={() => setIsExpanded((prev) => !prev)}
+          className="flex-1 flex items-center gap-3 cursor-pointer min-w-0"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              setIsExpanded((prev) => !prev);
+            }
+          }}
+        >
+          {/* Expand/collapse indicator */}
+          <ChevronDown
             className={cn(
-              "text-[10px] font-medium shrink-0 hidden sm:inline-flex",
-              cat.badgeClass
+              "w-4 h-4 text-text-secondary/40 shrink-0 transition-transform duration-200",
+              isExpanded && "rotate-180"
             )}
-          >
-            {cat.label}
-          </Badge>
-        )}
+          />
 
-        {/* Difficulty badge */}
-        {diff && (
-          <Badge
-            variant="outline"
-            className={cn("text-[10px] font-medium shrink-0", diff.badgeClass)}
-          >
-            {diff.label}
-          </Badge>
-        )}
+          {/* Question title */}
+          <span className="text-sm font-medium text-text-primary flex-1 min-w-0 truncate text-left">
+            {question.title}
+          </span>
 
-        {/* Company tags — first two, then overflow count */}
-        <div className="hidden md:flex items-center gap-1 shrink-0">
-          {question.company_tags.slice(0, 2).map((company) => (
-            <span
-              key={company}
-              className="text-[10px] px-1.5 py-0.5 rounded bg-surface2 text-text-secondary/60 border border-border/30 whitespace-nowrap"
-            >
-              {company}
-            </span>
-          ))}
-          {question.company_tags.length > 2 && (
-            <span className="text-[10px] text-text-secondary/40">
-              +{question.company_tags.length - 2}
-            </span>
+          {/* Solved indicator */}
+          {isSolved && (
+            <CheckCircle2 className="w-4 h-4 text-brand-success shrink-0" />
           )}
+
+          {/* Category badge (hidden on small screens) */}
+          {cat && (
+            <Badge
+              variant="outline"
+              className={cn(
+                "text-[10px] font-medium shrink-0 hidden sm:inline-flex",
+                cat.badgeClass
+              )}
+            >
+              {cat.label}
+            </Badge>
+          )}
+
+          {/* Difficulty badge */}
+          {diff && (
+            <Badge
+              variant="outline"
+              className={cn("text-[10px] font-medium shrink-0", diff.badgeClass)}
+            >
+              {diff.label}
+            </Badge>
+          )}
+
+          {/* Company tags — first two, then overflow count */}
+          <div className="hidden md:flex items-center gap-1 shrink-0">
+            {question.company_tags.slice(0, 2).map((company) => (
+              <span
+                key={company}
+                className="text-[10px] px-1.5 py-0.5 rounded bg-surface2 text-text-secondary/60 border border-border/30 whitespace-nowrap"
+              >
+                {company}
+              </span>
+            ))}
+            {question.company_tags.length > 2 && (
+              <span className="text-[10px] text-text-secondary/40">
+                +{question.company_tags.length - 2}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Bookmark button */}
@@ -159,7 +169,7 @@ export default function QuestionCard({
           onToggle={onBookmarkChange}
           size="sm"
         />
-      </button>
+      </div>
 
       {/* Expanded content with animation */}
       <AnimatePresence initial={false}>

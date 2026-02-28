@@ -57,84 +57,8 @@ function CardSkeleton({ height = "h-40" }: { height?: string }) {
 
 // ---- Server-side data fetching helpers --------------------------------------
 
-const DEV_BYPASS = process.env.NEXT_PUBLIC_DEV_BYPASS === "true";
-
-// Mock data for dev bypass mode
-const MOCK_SESSIONS = [
-  {
-    id: "mock-1",
-    interview_type: "dsa",
-    company_context: "Google",
-    overall_score: 82,
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-    duration_seconds: 2700,
-  },
-  {
-    id: "mock-2",
-    interview_type: "system_design",
-    company_context: "Amazon",
-    overall_score: 68,
-    created_at: new Date(Date.now() - 172800000).toISOString(),
-    duration_seconds: 3200,
-  },
-  {
-    id: "mock-3",
-    interview_type: "behavioral",
-    company_context: null,
-    overall_score: 91,
-    created_at: new Date(Date.now() - 345600000).toISOString(),
-    duration_seconds: 1800,
-  },
-  {
-    id: "mock-4",
-    interview_type: "sql",
-    company_context: "Flipkart",
-    overall_score: 55,
-    created_at: new Date(Date.now() - 518400000).toISOString(),
-    duration_seconds: 2100,
-  },
-  {
-    id: "mock-5",
-    interview_type: "dsa",
-    company_context: "Microsoft",
-    overall_score: 73,
-    created_at: new Date(Date.now() - 691200000).toISOString(),
-    duration_seconds: 2400,
-  },
-];
-
-const MOCK_CHALLENGE = {
-  id: "mock-challenge",
-  title: "Design a URL Shortener",
-  description:
-    "Design a system that can shorten long URLs and redirect users efficiently. Consider the data model, API design, hash generation strategy, and how you would handle high traffic. Discuss trade-offs between different approaches for generating unique short codes.",
-  difficulty: "medium" as const,
-  category: "system_design",
-};
 
 async function getDashboardData() {
-  if (DEV_BYPASS) {
-    const scores = MOCK_SESSIONS.map((s) => s.overall_score).filter(
-      (s): s is number => s !== null
-    );
-    const avg = scores.length > 0
-      ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
-      : 0;
-
-    return {
-      sessions: MOCK_SESSIONS,
-      totalInterviews: MOCK_SESSIONS.length,
-      averageScore: avg,
-      questionsPracticed: 12,
-      scoreHistory: MOCK_SESSIONS.map((s) => ({
-        date: s.created_at,
-        score: s.overall_score ?? 0,
-      })).reverse(),
-      dailyChallenge: MOCK_CHALLENGE,
-      isChallengeCompleted: false,
-    };
-  }
-
   const supabase = await createClient();
   const {
     data: { user },
