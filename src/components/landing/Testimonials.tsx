@@ -16,32 +16,32 @@ interface Testimonial {
 const TESTIMONIALS: Testimonial[] = [
   {
     quote:
-      "I'd been stuck at the same level for two years. CracktheRole's company-specific questions for Razorpay's system design round were exactly what I needed. Cleared the interview in the first attempt and got a 42% hike.",
-    name: "Ananya Sharma",
-    role: "Senior Software Engineer",
-    company: "Razorpay",
-    initials: "AS",
+      "CracktheRole's mock interview questions were spot on for my interview at C Data. The AI feedback was super helpful and I cleared the interview in the first attempt. Highly recommend for anyone preparing for a tech interview.",
+    name: "Yazhini Krishnan",
+    role: "Product Engineer",
+    company: "C Data",
+    initials: "YK",
     avatarColor: "from-brand-primary to-brand-primary-dark",
     rating: 5,
   },
   {
     quote:
-      "The AI feedback is surprisingly honest. It told me I was repeating filler phrases and my solution lacked edge-case thinking. After three weeks of practice, my mock interview scores went from 54 to 87. Got into Google Hyderabad.",
-    name: "Rohan Mehta",
-    role: "L5 Software Engineer",
-    company: "Google",
-    initials: "RM",
+      "The AI feedback is surprisingly honest. It told me I was repeating filler phrases and my solution lacked edge-case thinking. After three weeks of practice, my mock interview scores went from 54 to 87.",
+    name: "Rahul Reddy",
+    role: "Data Engineer",
+    company: "BD",
+    initials: "RR",
     avatarColor: "from-brand-secondary to-cyan-700",
     rating: 5,
   },
   {
     quote:
-      "The salary intelligence feature alone was worth it. I found out I was being underpaid by almost 8 LPA. Used the data in my negotiation with Microsoft and they matched it. CracktheRole paid for itself fifty times over.",
-    name: "Priya Nair",
-    role: "Principal Engineer",
-    company: "Microsoft India",
-    initials: "PN",
-    avatarColor: "from-brand-primary-light to-brand-primary",
+      "As a Product Manager I found theracktheRole's mock interview questions were spot on for my interview at C Data. The AI feedback was super helpful and I cleared the interview in the first attempt. Highly recommend for anyone preparing for a tech interview.",
+    name: "Sadhana K",
+    role: "Product Manager",
+    company: "Morgan Stanley",
+    initials: "SK",
+    avatarColor: "from-brand-primary to-brand-primary-dark",
     rating: 5,
   },
 ];
@@ -173,9 +173,8 @@ export default function Testimonials() {
           {TESTIMONIALS.map((_, i) => (
             <div
               key={i}
-              className={`h-1 rounded-full transition-all ${
-                i === 0 ? "w-5 bg-brand-primary" : "w-2 bg-border"
-              }`}
+              className={`h-1 rounded-full transition-all ${i === 0 ? "w-5 bg-brand-primary" : "w-2 bg-border"
+                }`}
             />
           ))}
         </div>

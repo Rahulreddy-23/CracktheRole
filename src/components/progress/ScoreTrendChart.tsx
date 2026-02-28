@@ -90,11 +90,10 @@ export default function ScoreTrendChart({ data }: Props) {
             <button
               key={r.value}
               onClick={() => setRange(r.value)}
-              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${
-                range === r.value
+              className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer ${range === r.value
                   ? "bg-brand-primary text-white"
                   : "text-text-secondary hover:text-text-primary hover:bg-surface2"
-              }`}
+                }`}
             >
               {r.label}
             </button>
@@ -107,7 +106,7 @@ export default function ScoreTrendChart({ data }: Props) {
           No data for selected range
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={220}>
+        <ResponsiveContainer width="100%" height={220} minWidth={1} minHeight={1}>
           <AreaChart data={chartData} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">

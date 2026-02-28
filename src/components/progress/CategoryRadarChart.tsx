@@ -53,7 +53,7 @@ export default function CategoryRadarChart({ technical, communication, problemSo
           Complete an interview to see breakdown
         </div>
       ) : (
-        <ResponsiveContainer width="100%" height={220}>
+        <ResponsiveContainer width="100%" height={220} minWidth={1} minHeight={1}>
           <RadarChart data={data}>
             <PolarGrid stroke="rgba(255,255,255,0.06)" />
             <PolarAngleAxis

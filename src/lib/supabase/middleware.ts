@@ -41,7 +41,6 @@ export async function updateSession(request: NextRequest) {
     "/interview",
     "/practice",
     "/progress",
-    "/salary",
     "/profile",
     "/onboarding",
   ];

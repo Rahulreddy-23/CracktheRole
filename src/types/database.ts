@@ -141,8 +141,18 @@ export type Database = {
           hints: string[];
           solution: string | null;
           starter_code: Record<string, string> | null;
-          test_cases: Array<{ input: string; expected_output: string }> | null;
+          // V2 format: {label, inputs: Record<string,unknown>, expected: unknown, isPublic: boolean}[]
+          test_cases: Array<{
+            label: string;
+            inputs: Record<string, unknown>;
+            expected: unknown;
+            isPublic: boolean;
+          }> | null;
           question_number: number | null;
+          // V2 code-execution metadata
+          function_name: string | null;
+          params: Array<{ name: string; type: string }> | null;
+          return_type: string | null;
           created_at: string;
         };
         Insert: {
@@ -156,8 +166,16 @@ export type Database = {
           hints?: string[];
           solution?: string | null;
           starter_code?: Record<string, string> | null;
-          test_cases?: Array<{ input: string; expected_output: string }> | null;
+          test_cases?: Array<{
+            label: string;
+            inputs: Record<string, unknown>;
+            expected: unknown;
+            isPublic: boolean;
+          }> | null;
           question_number?: number | null;
+          function_name?: string | null;
+          params?: Array<{ name: string; type: string }> | null;
+          return_type?: string | null;
           created_at?: string;
         };
         Update: {
@@ -171,8 +189,16 @@ export type Database = {
           hints?: string[];
           solution?: string | null;
           starter_code?: Record<string, string> | null;
-          test_cases?: Array<{ input: string; expected_output: string }> | null;
+          test_cases?: Array<{
+            label: string;
+            inputs: Record<string, unknown>;
+            expected: unknown;
+            isPublic: boolean;
+          }> | null;
           question_number?: number | null;
+          function_name?: string | null;
+          params?: Array<{ name: string; type: string }> | null;
+          return_type?: string | null;
           created_at?: string;
         };
         Relationships: [];
@@ -249,6 +275,7 @@ export type Database = {
           code: string;
           passed_tests: number;
           total_tests: number;
+          time_ms: number | null;
           completed_at: string;
         };
         Insert: {
@@ -259,6 +286,7 @@ export type Database = {
           code: string;
           passed_tests?: number;
           total_tests?: number;
+          time_ms?: number | null;
           completed_at?: string;
         };
         Update: {
@@ -269,6 +297,7 @@ export type Database = {
           code?: string;
           passed_tests?: number;
           total_tests?: number;
+          time_ms?: number | null;
           completed_at?: string;
         };
         Relationships: [];

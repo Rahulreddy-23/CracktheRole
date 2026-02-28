@@ -21,8 +21,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { useUserContext } from "@/components/providers/user-provider";
-import { createClient } from "@/lib/supabase/client";
 import { useInterviewStore } from "@/stores/interview-store";
+import { createInterviewSessionAction } from "@/app/actions/interview";
 import type { InterviewType, InterviewDifficulty } from "@/types/interview";
 
 const INTERVIEW_TYPES = [
@@ -83,17 +83,17 @@ const cardVariants = {
 
 export default function InterviewSetup() {
     const router = useRouter();
-    const { profile } = useUserContext();
+    const { profile, user } = useUserContext();
     const setSession = useInterviewStore((s) => s.setSession);
     const resetStore = useInterviewStore((s) => s.reset);
 
     const [interviewType, setInterviewType] = useState<InterviewType | null>(null);
     const [difficulty, setDifficulty] = useState<InterviewDifficulty>("medium");
-    const [companyContext, setCompanyContext] = useState<string>("general");
     const [durationMinutes, setDurationMinutes] = useState(30);
     const [isStarting, setIsStarting] = useState(false);
 
     const targetCompanies = profile?.target_companies ?? [];
+    const derivedCompany = targetCompanies.length > 0 ? targetCompanies[0] : null;
 
     const canStart = interviewType !== null;
 
@@ -104,38 +104,22 @@ export default function InterviewSetup() {
         try {
             resetStore();
 
-            const supabase = createClient();
-            const {
-                data: { user },
-                error: authError,
-            } = await supabase.auth.getUser();
-
-            if (authError || !user) {
-                console.error("Auth error:", authError);
+            if (!user) {
                 toast.error("You must be signed in to start an interview.");
                 setIsStarting(false);
                 return;
             }
 
-            const company = companyContext === "general" ? null : companyContext;
+            // Create interview session via Server Action to bypass Safari Client Lock freezes
+            const { sessionId, error } = await createInterviewSessionAction(
+                interviewType,
+                difficulty,
+                derivedCompany
+            );
 
-
-            // Create interview session in Supabase
-            const { data: session, error } = await supabase
-                .from("interview_sessions")
-                .insert({
-                    user_id: user.id,
-                    interview_type: interviewType,
-                    difficulty,
-                    company_context: company,
-                    status: "in_progress",
-                })
-                .select("id")
-                .single();
-
-            if (error) {
+            if (error || !sessionId) {
                 console.error("Session creation error:", error);
-                toast.error("Failed to create session. Please try again.");
+                toast.error(error || "Failed to create session. Please try again.");
                 setIsStarting(false);
                 return;
             }
@@ -143,12 +127,12 @@ export default function InterviewSetup() {
             const config = {
                 interviewType,
                 difficulty,
-                companyContext: company,
+                companyContext: derivedCompany,
                 durationMinutes,
             };
 
-            setSession(session.id, config);
-            router.push(`/interview/session?id=${session.id}`);
+            setSession(sessionId, config);
+            router.push(`/interview/session?id=${sessionId}`);
         } catch (err) {
             console.error("Failed to start interview:", err);
             toast.error("Something went wrong. Please try again.");
@@ -240,26 +224,7 @@ export default function InterviewSetup() {
                 </div>
             </section>
 
-            {/* Section C - Company Context */}
-            <section className="mb-8">
-                <h2 className="text-sm font-semibold text-text-secondary mb-3 uppercase tracking-wide">
-                    Company Context{" "}
-                    <span className="text-text-secondary/40 normal-case">(optional)</span>
-                </h2>
-                <Select value={companyContext} onValueChange={setCompanyContext}>
-                    <SelectTrigger className="bg-surface border-border/50 text-text-primary h-11">
-                        <SelectValue placeholder="Select a company" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-surface border-border/50">
-                        <SelectItem value="general">General (No specific company)</SelectItem>
-                        {targetCompanies.map((company) => (
-                            <SelectItem key={company} value={company}>
-                                {company}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </section>
+
 
             {/* Section D - Duration */}
             <section className="mb-10">

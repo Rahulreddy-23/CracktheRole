@@ -17,7 +17,7 @@ const STEPS: Step[] = [
     icon: Compass,
     title: "Choose Your Path",
     description:
-      "Select your target role, companies, and salary band. We build a personalized prep plan that focuses on what actually matters for your specific goals.",
+      "Select your target role and companies. We build a personalized prep plan that focuses on what actually matters for your specific goals.",
   },
   {
     number: "02",

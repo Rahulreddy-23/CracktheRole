@@ -62,19 +62,15 @@ const PLANS: Plan[] = [
             { text: "3 mock interviews per week", included: true },
             { text: "Basic feedback and scoring", included: true },
             { text: "50 practice questions", included: true },
-            { text: "Community salary data (view only)", included: true },
-            { text: "Daily challenge access", included: true },
             { text: "Company-specific questions", included: false },
             { text: "Detailed scorecards", included: false },
-            { text: "Priority question updates", included: false },
-            { text: "Negotiation simulator", included: false },
         ],
         cta: "Get Started Free",
         ctaVariant: "outline",
         href: "/login",
     },
     {
-        name: "Pro",
+        name: "Pro (Monthly)",
         price: "499 INR / month",
         badge: "Most Popular",
         highlighted: true,
@@ -83,27 +79,49 @@ const PLANS: Plan[] = [
             { text: "Company-specific prep for 50+ companies", included: true },
             { text: "Full detailed scorecards", included: true },
             { text: "500+ practice questions", included: true },
-            { text: "Salary data with filters", included: true },
-            { text: "No ads", included: true },
-            { text: "Streak rewards and badges", included: true },
-            { text: "Priority new content access", included: true },
         ],
         cta: "Upgrade to Pro",
         ctaVariant: "default",
     },
     {
-        name: "Elite",
-        price: "2,499 INR (one-time)",
+        name: "Pro (Yearly)",
+        price: "3,999 INR / year",
+        badge: "Best Value",
         features: [
-            { text: "Everything in Pro", included: true },
-            { text: "Negotiation Simulator with AI HR", included: true },
-            { text: "Resume review templates", included: true },
-            { text: "1-on-1 mock interview recordings", included: true },
-            { text: "Priority support", included: true },
-            { text: "Lifetime access to current features", included: true },
+            { text: "All Pro Monthly features", included: true },
+            { text: "Save over 30% annually", included: true },
+            { text: "Priority new content access", included: true },
+            { text: "Exclusive webinars", included: true },
+            { text: "1-on-1 career consultation (1x/yr)", included: true },
         ],
-        cta: "Go Elite",
+        cta: "Get Annual",
         ctaVariant: "default",
+    },
+    {
+        name: "Resume Review",
+        price: "499 INR / one-time",
+        features: [
+            { text: "Comprehensive ATS check", included: true },
+            { text: "Action-verb optimization", included: true },
+            { text: "Format & design feedback", included: true },
+            { text: "Industry keyword targeting", included: true },
+            { text: "Delivered in 48 hours", included: true },
+        ],
+        cta: "Buy Review",
+        ctaVariant: "outline",
+    },
+    {
+        name: "Mock Interview",
+        price: "1,499 INR / one-time",
+        features: [
+            { text: "1-on-1 with FAANG Engineer", included: true },
+            { text: "60-minute technical session", included: true },
+            { text: "Actionable written feedback", included: true },
+            { text: "Recorded session (optional)", included: true },
+            { text: "Customized question set", included: true },
+        ],
+        cta: "Book Interview",
+        ctaVariant: "outline",
     },
 ];
 
@@ -148,7 +166,7 @@ export default function Pricing() {
                         initial="hidden"
                         whileInView="visible"
                         viewport={{ once: true, margin: "-60px" }}
-                        className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto items-start"
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto items-start justify-center"
                     >
                         {PLANS.map((plan) => (
                             <PricingCard
@@ -184,8 +202,8 @@ function PricingCard({ plan, onPaidClick }: PricingCardProps) {
         <motion.div
             variants={cardVariants}
             className={`relative rounded-2xl border p-7 flex flex-col ${isHighlighted
-                    ? "border-brand-primary/50 bg-surface shadow-2xl shadow-brand-primary/10 md:scale-105 md:-my-4 z-10"
-                    : "border-border/50 bg-surface"
+                ? "border-brand-primary/50 bg-surface shadow-2xl shadow-brand-primary/10 md:scale-105 md:-my-4 z-10"
+                : "border-border/50 bg-surface"
                 }`}
         >
             {/* Animated glow border for highlighted card */}
@@ -238,8 +256,8 @@ function PricingCard({ plan, onPaidClick }: PricingCardProps) {
                     asChild
                     variant={plan.ctaVariant}
                     className={`w-full h-11 font-medium ${plan.ctaVariant === "outline"
-                            ? "border-border/60 text-text-secondary hover:text-text-primary hover:border-border hover:bg-surface/50 bg-transparent"
-                            : ""
+                        ? "border-border/60 text-text-secondary hover:text-text-primary hover:border-border hover:bg-surface/50 bg-transparent"
+                        : ""
                         }`}
                 >
                     <Link href={plan.href}>{plan.cta}</Link>
@@ -248,8 +266,8 @@ function PricingCard({ plan, onPaidClick }: PricingCardProps) {
                 <Button
                     variant={plan.ctaVariant}
                     className={`w-full h-11 font-medium ${isHighlighted
-                            ? "bg-brand-primary hover:bg-brand-primary/90 text-white shadow-lg shadow-brand-primary/25"
-                            : "bg-brand-primary/80 hover:bg-brand-primary/90 text-white"
+                        ? "bg-brand-primary hover:bg-brand-primary/90 text-white shadow-lg shadow-brand-primary/25"
+                        : "bg-brand-primary/80 hover:bg-brand-primary/90 text-white"
                         }`}
                     onClick={() => onPaidClick(plan.name)}
                 >

@@ -1,143 +1,74 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState, useEffect, useCallback } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { motion } from "framer-motion";
-import { BookMarked, SearchX, Database, BarChart3 } from "lucide-react";
-import toast from "react-hot-toast";
+import {
+  Search,
+  BookmarkIcon,
+  CheckCircle2,
+  Code2,
+  RotateCcw,
+  ChevronRight,
+  Loader2,
+  Database,
+  Tag,
+  Building2,
+  Filter,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import QuestionFilters from "./QuestionFilters";
-import QuestionCard, { type Question } from "./QuestionCard";
+import { cn } from "@/lib/utils";
+import BookmarkButton from "./BookmarkButton";
+import toast from "react-hot-toast";
+
+export interface Question {
+  id: string;
+  title: string;
+  description: string;
+  category: "dsa" | "system_design" | "behavioral" | "sql";
+  difficulty: "easy" | "medium" | "hard";
+  company_tags: string[];
+  topic_tags: string[];
+  hints: string[];
+  solution: string | null;
+  starter_code: Record<string, string> | null;
+  test_cases: unknown;
+  question_number: number | null;
+  function_name: string | null;
+  params: Array<{ name: string; type: string }> | null;
+  return_type: string | null;
+  created_at: string;
+}
 
 interface PracticeClientProps {
   companies: string[];
 }
 
-function QuestionSkeleton() {
-  return (
-    <div className="rounded-xl border border-border/40 bg-surface px-4 py-3.5 animate-pulse">
-      <div className="flex items-center gap-3">
-        <div className="w-6 h-4 bg-border/30 rounded shrink-0" />
-        <div className="w-4 h-4 bg-border/30 rounded shrink-0" />
-        <div className="h-4 flex-1 bg-border/30 rounded max-w-sm" />
-        <div className="h-5 w-16 bg-border/20 rounded-full hidden sm:block" />
-        <div className="h-5 w-12 bg-border/20 rounded-full" />
-        <div className="h-4 w-4 bg-border/20 rounded" />
-      </div>
-    </div>
-  );
-}
+const DIFF_CONFIG = {
+  easy:   { label: "Easy",   cls: "text-[#10B981]" },
+  medium: { label: "Medium", cls: "text-[#F59E0B]" },
+  hard:   { label: "Hard",   cls: "text-[#EF4444]" },
+};
 
-function StatsHeader({
-  total,
-  easyCt,
-  mediumCt,
-  hardCt,
-  solvedCt,
-}: {
-  total: number;
-  easyCt: number;
-  mediumCt: number;
-  hardCt: number;
-  solvedCt: number;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: -8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex flex-wrap items-center gap-3 mb-6 p-4 rounded-xl border border-border/40 bg-surface/80"
-    >
-      <div className="flex items-center gap-2 mr-4">
-        <BarChart3 className="w-4 h-4 text-text-secondary/50" />
-        <span className="text-sm font-semibold text-text-primary">
-          {total} <span className="text-text-secondary font-normal">Problems</span>
-        </span>
-      </div>
+const CATEGORY_TABS = [
+  { value: "",               label: "All"           },
+  { value: "dsa",            label: "DSA"           },
+  { value: "system_design",  label: "System Design" },
+  { value: "behavioral",     label: "Behavioral"    },
+  { value: "sql",            label: "SQL"           },
+];
 
-      <div className="flex items-center gap-2">
-        <Badge variant="outline" className="text-[11px] bg-brand-success/15 text-brand-success border-brand-success/30 gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-brand-success inline-block" />
-          Easy {easyCt}
-        </Badge>
-        <Badge variant="outline" className="text-[11px] bg-yellow-500/15 text-yellow-400 border-yellow-500/30 gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 inline-block" />
-          Medium {mediumCt}
-        </Badge>
-        <Badge variant="outline" className="text-[11px] bg-brand-danger/15 text-brand-danger border-brand-danger/30 gap-1">
-          <span className="w-1.5 h-1.5 rounded-full bg-brand-danger inline-block" />
-          Hard {hardCt}
-        </Badge>
-      </div>
-
-      <div className="ml-auto">
-        <Badge variant="outline" className="text-[11px] bg-brand-primary/15 text-brand-primary-light border-brand-primary/30">
-          ✓ Solved {solvedCt}
-        </Badge>
-      </div>
-    </motion.div>
-  );
-}
-
-function EmptyState({
-  type,
-  isUnfiltered,
-  onSeed,
-  seeding,
-}: {
-  type: "noResults" | "bookmarks";
-  isUnfiltered?: boolean;
-  onSeed?: () => void;
-  seeding?: boolean;
-}) {
-  return (
-    <div className="flex flex-col items-center justify-center py-20 text-center">
-      {type === "bookmarks" ? (
-        <>
-          <BookMarked className="w-10 h-10 text-text-secondary/20 mb-4" />
-          <p className="text-sm font-medium text-text-primary mb-1">
-            No bookmarks yet
-          </p>
-          <p className="text-xs text-text-secondary/60 max-w-xs">
-            You have not bookmarked any questions yet. Star questions to save
-            them here.
-          </p>
-        </>
-      ) : isUnfiltered ? (
-        <>
-          <Database className="w-10 h-10 text-text-secondary/20 mb-4" />
-          <p className="text-sm font-medium text-text-primary mb-1">
-            Question bank is empty
-          </p>
-          <p className="text-xs text-text-secondary/60 max-w-xs mb-4">
-            Seed the database with 30 curated questions to get started.
-          </p>
-          {onSeed && (
-            <Button
-              onClick={onSeed}
-              disabled={seeding}
-              className="bg-brand-primary hover:bg-brand-primary/90 text-white text-sm h-9 px-5 shadow-lg shadow-brand-primary/20"
-            >
-              {seeding ? "Seeding..." : "Load Questions"}
-            </Button>
-          )}
-        </>
-      ) : (
-        <>
-          <SearchX className="w-10 h-10 text-text-secondary/20 mb-4" />
-          <p className="text-sm font-medium text-text-primary mb-1">
-            No questions found
-          </p>
-          <p className="text-xs text-text-secondary/60 max-w-xs">
-            No questions match your filters. Try broadening your search.
-          </p>
-        </>
-      )}
-    </div>
-  );
-}
+const DIFF_FILTERS = [
+  { value: "", label: "All" },
+  { value: "easy",   label: "Easy"   },
+  { value: "medium", label: "Medium" },
+  { value: "hard",   label: "Hard"   },
+];
 
 export default function PracticeClient({ companies }: PracticeClientProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
 
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -150,248 +81,381 @@ export default function PracticeClient({ companies }: PracticeClientProps) {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [seeding, setSeeding] = useState(false);
 
-  const search = searchParams.get("search") || "";
-  const category = searchParams.get("category") || "";
+  // Local search (debounced via URL)
+  const [searchInput, setSearchInput] = useState(searchParams.get("search") || "");
+
+  const category   = searchParams.get("category") || "";
   const difficulty = searchParams.get("difficulty") || "";
-  const company = searchParams.get("company") || "";
-  const topic = searchParams.get("topic") || "";
+  const search     = searchParams.get("search") || "";
   const bookmarked = searchParams.get("bookmarked") === "true";
 
-  const [autoSeeded, setAutoSeeded] = useState(false);
+  const setParam = useCallback(
+    (key: string, value: string) => {
+      const p = new URLSearchParams(searchParams.toString());
+      if (value) p.set(key, value);
+      else p.delete(key);
+      p.delete("page");
+      router.push(`/practice?${p.toString()}`);
+    },
+    [searchParams, router]
+  );
 
-  // Fetch solved question IDs
+  // Fetch solved IDs
   useEffect(() => {
     fetch("/api/practice/completions")
       .then((r) => r.json())
-      .then((data) => {
-        if (data.completedIds) {
-          setSolvedIds(new Set<string>(data.completedIds));
-        }
-      })
-      .catch(() => { /* ignore */ });
+      .then((d) => { if (d.completedIds) setSolvedIds(new Set<string>(d.completedIds)); })
+      .catch(() => {});
   }, []);
 
-  // Re-fetch from page 1 whenever any filter changes
+  // Debounce search input
   useEffect(() => {
-    let cancelled = false;
-    setIsLoading(true);
-    setCurrentPage(1);
+    const id = setTimeout(() => {
+      if (searchInput !== search) setParam("search", searchInput);
+    }, 350);
+    return () => clearTimeout(id);
+  }, [searchInput]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const params = new URLSearchParams();
-    if (search) params.set("search", search);
-    if (category) params.set("category", category);
-    if (difficulty) params.set("difficulty", difficulty);
-    if (company) params.set("company", company);
-    if (topic) params.set("topic", topic);
-    if (bookmarked) params.set("bookmarked", "true");
-    params.set("page", "1");
+  const fetchQuestions = useCallback(async (page: number, append = false) => {
+    if (!append) setIsLoading(true);
+    else setIsLoadingMore(true);
 
-    fetch(`/api/practice/questions?${params.toString()}`)
-      .then((r) => r.json())
-      .then(async (data) => {
-        if (cancelled) return;
-
-        const fetchedQuestions = data.questions ?? [];
-        const isUnfilteredLoad =
-          !search && !category && !difficulty && !company && !topic && !bookmarked;
-
-        // Auto-seed: if DB is empty and no filters applied, seed automatically
-        if (fetchedQuestions.length === 0 && isUnfilteredLoad && !autoSeeded) {
-          setAutoSeeded(true);
-          setSeeding(true);
-          try {
-            const seedRes = await fetch("/api/practice/seed", {
-              method: "POST",
-            });
-            if (seedRes.ok) {
-              toast.success("Question bank seeded with curated questions.");
-              // Re-fetch after seeding
-              const refetch = await fetch(
-                `/api/practice/questions?page=1`
-              );
-              const refetchData = await refetch.json();
-              if (!cancelled) {
-                setQuestions(refetchData.questions ?? []);
-                setTotal(refetchData.total ?? 0);
-                setBookmarkedIds(
-                  new Set<string>(refetchData.bookmarkedIds ?? [])
-                );
-                setHasMore(refetchData.hasMore ?? false);
-              }
-            } else {
-              toast.error("Failed to auto-seed questions.");
-            }
-          } catch {
-            toast.error("Failed to auto-seed questions.");
-          } finally {
-            if (!cancelled) {
-              setSeeding(false);
-              setIsLoading(false);
-            }
-          }
-          return;
-        }
-
-        setQuestions(fetchedQuestions);
-        setTotal(data.total ?? 0);
-        setBookmarkedIds(new Set<string>(data.bookmarkedIds ?? []));
-        setHasMore(data.hasMore ?? false);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        if (!cancelled) setIsLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, category, difficulty, company, topic, bookmarked]);
-
-  const handleLoadMore = async () => {
-    setIsLoadingMore(true);
-    const nextPage = currentPage + 1;
+    const p = new URLSearchParams();
+    if (search)     p.set("search", search);
+    if (category)   p.set("category", category);
+    if (difficulty) p.set("difficulty", difficulty);
+    if (bookmarked) p.set("bookmarked", "true");
+    p.set("page", String(page));
 
     try {
-      const params = new URLSearchParams();
-      if (search) params.set("search", search);
-      if (category) params.set("category", category);
-      if (difficulty) params.set("difficulty", difficulty);
-      if (company) params.set("company", company);
-      if (topic) params.set("topic", topic);
-      if (bookmarked) params.set("bookmarked", "true");
-      params.set("page", nextPage.toString());
+      const res  = await fetch(`/api/practice/questions?${p.toString()}`);
+      const data = await res.json();
+      const qs   = data.questions ?? [];
 
-      const response = await fetch(
-        `/api/practice/questions?${params.toString()}`
-      );
-      const data = await response.json();
-
-      setQuestions((prev) => [...prev, ...(data.questions ?? [])]);
+      if (!append) {
+        setQuestions(qs);
+      } else {
+        setQuestions((prev) => [...prev, ...qs]);
+      }
+      setTotal(data.total ?? 0);
+      setBookmarkedIds(new Set<string>(data.bookmarkedIds ?? []));
       setHasMore(data.hasMore ?? false);
-      setCurrentPage(nextPage);
+      setCurrentPage(page);
+
+      // Auto-seed if completely empty and no filters
+      const unfiltered = !search && !category && !difficulty && !bookmarked;
+      if (qs.length === 0 && unfiltered && page === 1) {
+        handleSeed();
+      }
     } finally {
+      setIsLoading(false);
       setIsLoadingMore(false);
     }
-  };
+  }, [search, category, difficulty, bookmarked]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleBookmarkChange = (
-    questionId: string,
-    isNowBookmarked: boolean
-  ) => {
-    setBookmarkedIds((prev) => {
-      const next = new Set(prev);
-      if (isNowBookmarked) next.add(questionId);
-      else next.delete(questionId);
-      return next;
-    });
-  };
+  useEffect(() => {
+    fetchQuestions(1);
+  }, [fetchQuestions]);
 
-  const showNoBookmarks = bookmarked && !isLoading && questions.length === 0;
-  const showNoResults = !bookmarked && !isLoading && questions.length === 0;
-  const isUnfiltered = !search && !category && !difficulty && !company && !topic && !bookmarked;
-
-  // Compute stats from all loaded questions
-  const easyCt = questions.filter((q) => q.difficulty === "easy").length;
-  const mediumCt = questions.filter((q) => q.difficulty === "medium").length;
-  const hardCt = questions.filter((q) => q.difficulty === "hard").length;
-
-  async function handleSeed() {
+  const handleSeed = async () => {
     setSeeding(true);
     try {
       const res = await fetch("/api/practice/seed", { method: "POST" });
       if (res.ok) {
-        toast.success("Questions loaded successfully!");
-        window.location.reload();
+        toast.success("Questions loaded.");
+        await fetchQuestions(1);
       } else {
-        toast.error("Failed to load questions. Please try again.");
+        const d = await res.json();
+        toast.error(d.error || "Seed failed.");
       }
     } catch {
-      toast.error("Failed to load questions.");
+      toast.error("Could not reach seed endpoint.");
     } finally {
       setSeeding(false);
     }
-  }
+  };
+
+  const toggleBookmark = (id: string, isBookmarked: boolean) => {
+    setBookmarkedIds((prev) => {
+      const next = new Set(prev);
+      if (isBookmarked) next.add(id); else next.delete(id);
+      return next;
+    });
+  };
+
+  // Stats
+  const easy   = questions.filter((q) => q.difficulty === "easy").length;
+  const medium = questions.filter((q) => q.difficulty === "medium").length;
+  const hard   = questions.filter((q) => q.difficulty === "hard").length;
+  const solved = questions.filter((q) => solvedIds.has(q.id)).length;
 
   return (
-    <>
-      {/* Page heading */}
+    <div>
+      {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-text-primary">Question Bank</h1>
-        {!isLoading && (
-          <p className="text-sm text-text-secondary mt-1">
-            Practice problems to sharpen your skills
-          </p>
-        )}
-        {isLoading && (
-          <div className="h-4 w-32 bg-border/30 rounded mt-1 animate-pulse" />
-        )}
+        <h1 className="text-xl font-bold text-text-primary">Problem Bank</h1>
+        <p className="text-sm text-text-secondary mt-0.5">
+          Practice DSA, System Design, Behavioral, and SQL problems
+        </p>
       </div>
 
-      {/* Stats header */}
-      {!isLoading && questions.length > 0 && (
-        <StatsHeader
-          total={total}
-          easyCt={easyCt}
-          mediumCt={mediumCt}
-          hardCt={hardCt}
-          solvedCt={solvedIds.size}
-        />
+      {/* ── Stats row ───────────────────────────────────────────────────────── */}
+      {!isLoading && total > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-5 text-xs text-text-secondary"
+        >
+          <span className="font-semibold text-text-primary text-sm">{total} Problems</span>
+          <span className="text-[#10B981]">{easy} Easy</span>
+          <span className="text-[#F59E0B]">{medium} Medium</span>
+          <span className="text-[#EF4444]">{hard} Hard</span>
+          {solved > 0 && (
+            <span className="flex items-center gap-1 text-brand-primary-light">
+              <CheckCircle2 className="w-3 h-3" />
+              {solved} Solved
+            </span>
+          )}
+        </motion.div>
       )}
 
-      {/* Filters */}
-      <QuestionFilters companies={companies} />
-
-      {/* Question list */}
-      {isLoading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 7 }).map((_, i) => (
-            <QuestionSkeleton key={i} />
-          ))}
+      {/* ── Filter bar ──────────────────────────────────────────────────────── */}
+      <div className="space-y-3 mb-5">
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary/40" />
+          <input
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="Search problems..."
+            className="w-full pl-9 pr-4 h-10 rounded-xl bg-surface border border-border/40 text-sm text-text-primary placeholder:text-text-secondary/40 focus:outline-none focus:border-brand-primary/40 transition-colors"
+          />
+          {searchInput && (
+            <button
+              onClick={() => { setSearchInput(""); setParam("search", ""); }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary/40 hover:text-text-secondary"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
-      ) : showNoBookmarks ? (
-        <EmptyState type="bookmarks" />
-      ) : showNoResults ? (
-        <EmptyState
-          type="noResults"
-          isUnfiltered={isUnfiltered}
-          onSeed={isUnfiltered ? handleSeed : undefined}
-          seeding={seeding}
-        />
-      ) : (
-        <>
-          <div className="space-y-2">
-            {questions.map((question, idx) => (
-              <QuestionCard
-                key={question.id}
-                question={question}
-                isBookmarked={bookmarkedIds.has(question.id)}
-                isSolved={solvedIds.has(question.id)}
-                index={idx}
-                onBookmarkChange={handleBookmarkChange}
-              />
+
+        {/* Category + Difficulty + Bookmarked */}
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Category tabs */}
+          <div className="flex items-center bg-surface border border-border/40 rounded-lg p-0.5 gap-0.5">
+            {CATEGORY_TABS.map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setParam("category", tab.value)}
+                className={cn(
+                  "px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                  category === tab.value
+                    ? "bg-brand-primary text-white"
+                    : "text-text-secondary hover:text-text-primary"
+                )}
+              >
+                {tab.label}
+              </button>
             ))}
           </div>
 
-          {/* Pagination */}
-          <div className="mt-8 flex flex-col items-center gap-3">
-            <p className="text-xs text-text-secondary/50">
-              Showing {questions.length} of {total} question
-              {total !== 1 ? "s" : ""}
-            </p>
-            {hasMore && (
-              <Button
-                variant="outline"
-                onClick={handleLoadMore}
-                disabled={isLoadingMore}
-                className="border-border/50 text-text-secondary hover:text-text-primary hover:bg-surface2 text-sm min-w-32"
+          {/* Difficulty */}
+          <div className="flex items-center bg-surface border border-border/40 rounded-lg p-0.5 gap-0.5">
+            {DIFF_FILTERS.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => setParam("difficulty", f.value)}
+                className={cn(
+                  "px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                  difficulty === f.value
+                    ? "bg-brand-primary text-white"
+                    : f.value
+                    ? DIFF_CONFIG[f.value as keyof typeof DIFF_CONFIG]?.cls ?? "text-text-secondary"
+                    : "text-text-secondary hover:text-text-primary"
+                )}
               >
-                {isLoadingMore ? "Loading..." : "Load More"}
-              </Button>
-            )}
+                {f.label}
+              </button>
+            ))}
           </div>
-        </>
+
+          {/* Bookmarked toggle */}
+          <button
+            onClick={() => setParam("bookmarked", bookmarked ? "" : "true")}
+            className={cn(
+              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors",
+              bookmarked
+                ? "bg-brand-primary/15 text-brand-primary-light border-brand-primary/30"
+                : "border-border/40 text-text-secondary hover:text-text-primary bg-surface"
+            )}
+          >
+            <BookmarkIcon className={cn("w-3.5 h-3.5", bookmarked && "fill-current")} />
+            Bookmarked
+          </button>
+        </div>
+      </div>
+
+      {/* ── Table header ────────────────────────────────────────────────────── */}
+      {!isLoading && total > 0 && (
+        <div className="hidden sm:grid grid-cols-[2rem_1fr_6rem_6rem_4rem] gap-4 px-4 py-2 text-[11px] font-medium text-text-secondary/50 uppercase tracking-wider border-b border-border/30 mb-1">
+          <span>#</span>
+          <span>Title</span>
+          <span>Category</span>
+          <span>Difficulty</span>
+          <span></span>
+        </div>
       )}
-    </>
+
+      {/* ── Questions list ──────────────────────────────────────────────────── */}
+      {isLoading ? (
+        <div className="space-y-1.5 mt-2">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="h-12 rounded-lg bg-surface/60 animate-pulse border border-border/20" />
+          ))}
+        </div>
+      ) : questions.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <Database className="w-10 h-10 text-text-secondary/20 mb-4" />
+          <p className="text-sm font-medium text-text-primary mb-1">
+            {bookmarked ? "No bookmarked questions" : search || category || difficulty ? "No results" : "Question bank is empty"}
+          </p>
+          <p className="text-xs text-text-secondary/50 mb-4">
+            {bookmarked
+              ? "Bookmark questions to see them here."
+              : search || category || difficulty
+              ? "Try adjusting your filters."
+              : "Run the V2 migration in Supabase, then seed below."}
+          </p>
+          {!bookmarked && !search && !category && !difficulty && (
+            <Button
+              onClick={handleSeed}
+              disabled={seeding}
+              className="bg-brand-primary hover:bg-brand-primary/90 text-white text-xs h-8 px-4"
+            >
+              {seeding ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" /> : null}
+              {seeding ? "Seeding..." : "Seed 5 Problems"}
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-0.5">
+          {questions.map((q, i) => {
+            const diff = DIFF_CONFIG[q.difficulty];
+            const isSolved = solvedIds.has(q.id);
+            const isBookmarked = bookmarkedIds.has(q.id);
+            const canSolve = q.category === "dsa" && Boolean(q.function_name);
+
+            return (
+              <motion.div
+                key={q.id}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: Math.min(i * 0.03, 0.3) }}
+                className={cn(
+                  "group grid grid-cols-[2rem_1fr] sm:grid-cols-[2rem_1fr_6rem_6rem_4rem] gap-4 items-center px-4 py-3.5 rounded-lg border transition-all cursor-pointer",
+                  isSolved
+                    ? "border-brand-success/20 bg-brand-success/3 hover:bg-brand-success/5"
+                    : "border-transparent hover:border-border/40 hover:bg-surface/60"
+                )}
+                onClick={() => canSolve && router.push(`/practice/solve/${q.id}`)}
+              >
+                {/* Number / solved indicator */}
+                <div className="flex items-center justify-center">
+                  {isSolved ? (
+                    <CheckCircle2 className="w-4 h-4 text-brand-success" />
+                  ) : (
+                    <span className="text-xs text-text-secondary/40 font-mono tabular-nums">
+                      {q.question_number ?? i + 1}
+                    </span>
+                  )}
+                </div>
+
+                {/* Title + tags */}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={cn(
+                      "text-sm font-medium truncate transition-colors",
+                      canSolve
+                        ? "text-text-primary group-hover:text-brand-primary-light"
+                        : "text-text-primary"
+                    )}>
+                      {q.title}
+                    </span>
+                    {/* Topic tags — first 2 on larger screens */}
+                    {q.topic_tags.slice(0, 2).map((tag) => (
+                      <span
+                        key={tag}
+                        className="hidden lg:inline text-[10px] px-1.5 py-0.5 rounded-full bg-surface text-text-secondary/60 border border-border/30"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                  {/* Company tags on small screens */}
+                  <div className="sm:hidden flex items-center gap-2 mt-0.5">
+                    <span className={cn("text-[11px] font-medium", diff.cls)}>{diff.label}</span>
+                    {q.company_tags.slice(0, 2).map((c) => (
+                      <span key={c} className="text-[10px] text-text-secondary/50">{c}</span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Category badge */}
+                <div className="hidden sm:flex">
+                  <span className="text-[11px] text-text-secondary/60 capitalize">
+                    {q.category === "system_design" ? "System Design" : q.category.toUpperCase()}
+                  </span>
+                </div>
+
+                {/* Difficulty */}
+                <div className="hidden sm:flex">
+                  <span className={cn("text-[11px] font-medium", diff.cls)}>{diff.label}</span>
+                </div>
+
+                {/* Actions */}
+                <div className="hidden sm:flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                  <BookmarkButton
+                    questionId={q.id}
+                    isBookmarked={isBookmarked}
+                    size="sm"
+                    onToggle={(_, isNowBookmarked) => toggleBookmark(q.id, isNowBookmarked)}
+                  />
+                  {canSolve && (
+                    <Link
+                      href={`/practice/solve/${q.id}`}
+                      className="w-7 h-7 flex items-center justify-center rounded-md text-text-secondary/40 hover:text-brand-primary-light hover:bg-brand-primary/10 transition-colors"
+                      title="Solve"
+                    >
+                      <Code2 className="w-3.5 h-3.5" />
+                    </Link>
+                  )}
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Load more ───────────────────────────────────────────────────────── */}
+      {hasMore && (
+        <div className="flex justify-center mt-6">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchQuestions(currentPage + 1, true)}
+            disabled={isLoadingMore}
+            className="border-border/40 text-text-secondary hover:text-text-primary text-xs"
+          >
+            {isLoadingMore ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+            ) : (
+              <ChevronRight className="w-3.5 h-3.5 mr-1.5" />
+            )}
+            Load More
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }

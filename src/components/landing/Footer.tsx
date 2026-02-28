@@ -15,20 +15,19 @@ const PRODUCT_LINKS = [
     { label: "Features", href: "#features" },
     { label: "Pricing", href: "#pricing" },
     { label: "Question Bank", href: "#", comingSoon: true },
-    { label: "Salary Data", href: "#", comingSoon: true },
 ];
 
 const RESOURCE_LINKS = [
+    { label: "About Us", href: "/about" },
+    { label: "Contact Us", href: "/contact" },
     { label: "Blog", href: "#", comingSoon: true },
-    { label: "Documentation", href: "#", comingSoon: true },
-    { label: "API", href: "#", comingSoon: true },
     { label: "Status", href: "#", comingSoon: true },
 ];
 
 const LEGAL_LINKS = [
-    { label: "Privacy Policy", href: "#" },
-    { label: "Terms of Service", href: "#" },
-    { label: "Contact Us", href: "#" },
+    { label: "Privacy Policy", href: "/privacy" },
+    { label: "Terms of Service", href: "/terms" },
+    { label: "Refund Policy", href: "/refund" },
 ];
 
 const SOCIAL_LINKS = [
@@ -94,7 +93,7 @@ export default function Footer() {
                 <div className="border-t border-border/30">
                     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-center gap-2">
                         <p className="text-sm text-text-secondary/50 text-center">
-                            &copy; 2026 CrackTheRole. Built for India&apos;s ambitious
+                            &copy; 2026 CrackTheRole (Basi Reddy Rahul Reddy). Built for India&apos;s ambitious
                             engineers.
                         </p>
                     </div>

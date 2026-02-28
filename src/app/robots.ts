@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
             {
                 userAgent: "*",
                 allow: "/",
-                disallow: ["/dashboard", "/interview", "/practice", "/profile", "/progress", "/salary", "/onboarding", "/api/"],
+                disallow: ["/dashboard", "/interview", "/practice", "/profile", "/progress", "/onboarding", "/api/"],
             },
         ],
         sitemap: "https://cracktherole.com/sitemap.xml",

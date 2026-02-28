@@ -136,11 +136,10 @@ export default function Hero() {
             <motion.span
               key={i}
               variants={wordVariants}
-              className={`inline-block mr-[0.25em] ${
-                word === "MAANG" || word === "Companies"
+              className={`inline-block mr-[0.25em] ${word === "MAANG" || word === "Companies"
                   ? "bg-linear-to-r from-brand-primary-light to-brand-secondary bg-clip-text text-transparent"
                   : "text-text-primary"
-              }`}
+                }`}
             >
               {word}
             </motion.span>
@@ -155,8 +154,8 @@ export default function Hero() {
           animate="visible"
           className="text-lg sm:text-xl text-text-secondary max-w-2xl leading-relaxed mb-10"
         >
-          AI-powered mock interviews, company-specific prep, and salary
-          intelligence &mdash; everything you need to land a 40LPA+ offer.
+          AI-powered mock interviews, company-specific prep, and detailed feedback
+          &mdash; everything you need to land a 40LPA+ offer.
         </motion.p>
 
         {/* CTA buttons */}

@@ -15,10 +15,10 @@ import {
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
 import { useUserContext } from "@/components/providers/user-provider";
-import { createClient } from "@/lib/supabase/client";
+import { signOutAction, deleteAccountAction } from "@/app/actions/auth";
 
 export default function AccountActions() {
-  const { user, signOut } = useUserContext();
+  const { user } = useUserContext();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteInput, setDeleteInput] = useState("");
   const [deleting, setDeleting] = useState(false);
@@ -26,7 +26,13 @@ export default function AccountActions() {
 
   async function handleSignOut() {
     setSigningOut(true);
-    await signOut();
+    try {
+      await signOutAction();
+    } catch (e) {
+      // redirect throws an error that we shouldn't catch, or just let it propagate to Next.js router
+      setSigningOut(false);
+      throw e;
+    }
   }
 
   async function handleDeleteAccount() {
@@ -34,23 +40,16 @@ export default function AccountActions() {
     setDeleting(true);
 
     try {
-      const supabase = createClient();
-      // Deleting the profile row cascades to all related data
-      const { error } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", user.id);
-
-      if (error) {
-        toast.error("Failed to delete account. Please contact support.");
+      await deleteAccountAction();
+    } catch (e: any) {
+      // Next.js redirect() throws a specific error, we let it propagate
+      if (e.message !== "NEXT_REDIRECT") {
+        toast.error("Failed to delete account. Please try again.");
         setDeleting(false);
-        return;
+      } else {
+        setDeleting(false);
+        throw e;
       }
-
-      await supabase.auth.signOut();
-    } catch {
-      toast.error("Something went wrong.");
-      setDeleting(false);
     }
   }
 

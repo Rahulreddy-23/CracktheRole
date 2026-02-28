@@ -44,11 +44,6 @@ const FAQ_ITEMS = [
             "Currently, CrackTheRole is focused on tech roles: Data Engineer, Backend SWE, ML Engineer, Frontend SWE, and DevOps. We are actively working on adding Product Manager and Business Analyst tracks.",
     },
     {
-        question: "How accurate is the salary data?",
-        answer:
-            "All salary data is anonymously crowdsourced from verified tech professionals. We cross-reference with publicly available data points to ensure accuracy. The more people contribute, the more accurate it gets.",
-    },
-    {
         question: "Will payments be available soon?",
         answer:
             "Yes! We are integrating Razorpay for seamless UPI, card, and net banking payments. Join the waitlist to be notified when Pro and Elite plans go live.",

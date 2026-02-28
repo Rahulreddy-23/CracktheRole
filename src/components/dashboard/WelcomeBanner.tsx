@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { useUserContext } from "@/components/providers/user-provider";
 
 export default function WelcomeBanner() {
-    const { profile } = useUserContext();
-    const firstName = profile?.full_name?.split(" ")[0] || "there";
+    const { profile, user } = useUserContext();
+    const firstName = profile?.full_name?.split(" ")[0] || user?.user_metadata?.full_name?.split(" ")[0] || "there";
     const streak = profile?.streak_count ?? 0;
 
     return (
@@ -54,7 +54,7 @@ export default function WelcomeBanner() {
                     className="bg-brand-primary hover:bg-brand-primary/90 text-white font-medium gap-2 px-5 h-10 shadow-lg shadow-brand-primary/20 shrink-0"
                 >
                     <Link href="/interview/setup">
-                        Quick Start
+                        Start Mock Interview
                         <ArrowRight className="w-4 h-4" />
                     </Link>
                 </Button>

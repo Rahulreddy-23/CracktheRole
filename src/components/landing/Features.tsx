@@ -6,7 +6,6 @@ import {
   Brain,
   Building2,
   Code2,
-  IndianRupee,
   TrendingUp,
   type LucideIcon,
 } from "lucide-react";
@@ -46,13 +45,6 @@ const FEATURES: Feature[] = [
     description:
       "After every interview, get a breakdown of your strengths, weaknesses, and specific improvement suggestions with actionable next steps.",
     accentColor: "rgba(16,185,129,0.12)",
-  },
-  {
-    icon: IndianRupee,
-    title: "Salary Intelligence",
-    description:
-      "See real, anonymized salary data from Indian tech companies. Know your worth before you negotiate your next offer.",
-    accentColor: "rgba(245,158,11,0.12)",
   },
   {
     icon: TrendingUp,

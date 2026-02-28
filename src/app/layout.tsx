@@ -20,21 +20,20 @@ export const metadata: Metadata = {
     default: "CrackTheRole - AI Interview Coach for 40LPA+ Tech Roles",
   },
   description:
-    "Crack your next software engineering interview with AI-powered mock interviews, company-specific prep, real-time code editor, and salary intelligence. Built for Indian engineers targeting 40LPA+ roles.",
+    "Crack your next software engineering interview with AI-powered mock interviews, company-specific prep, and real-time code editor. Built for Indian engineers targeting 40LPA+ roles.",
   keywords: [
     "interview preparation",
     "AI mock interview",
     "software engineering",
     "DSA practice",
     "system design",
-    "salary negotiation",
     "40 LPA",
     "tech interviews India",
   ],
   openGraph: {
     title: "CrackTheRole - AI Interview Coach for 40LPA+ Tech Roles",
     description:
-      "AI-powered mock interviews, company-specific prep, and salary intelligence for Indian software engineers.",
+      "AI-powered mock interviews and company-specific prep for Indian software engineers.",
     type: "website",
     locale: "en_IN",
     siteName: "CrackTheRole",

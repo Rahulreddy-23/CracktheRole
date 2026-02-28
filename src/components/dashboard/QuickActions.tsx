@@ -3,31 +3,17 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
-    MessageSquare,
     BookOpen,
-    IndianRupee,
     UserCircle,
     ArrowRight,
 } from "lucide-react";
 
 const ACTIONS = [
     {
-        label: "Start Mock Interview",
-        href: "/interview/setup",
-        icon: MessageSquare,
-        isPrimary: true,
-    },
-    {
         label: "Browse Questions",
         href: "/practice",
         icon: BookOpen,
-        isPrimary: false,
-    },
-    {
-        label: "View Salary Data",
-        href: "/salary",
-        icon: IndianRupee,
-        isPrimary: false,
+        isPrimary: true,
     },
     {
         label: "Update Profile",
@@ -79,8 +65,8 @@ export default function QuickActions() {
                             <Link
                                 href={action.href}
                                 className={`flex items-center gap-3 w-full h-10 px-4 rounded-md text-sm font-medium transition-all duration-200 ${action.isPrimary
-                                        ? "bg-brand-primary text-white shadow-md shadow-brand-primary/15 hover:bg-brand-primary/90"
-                                        : "bg-transparent border border-border/50 text-text-secondary hover:text-text-primary hover:bg-surface2 hover:border-border"
+                                    ? "bg-brand-primary text-white shadow-md shadow-brand-primary/15 hover:bg-brand-primary/90"
+                                    : "bg-transparent border border-border/50 text-text-secondary hover:text-text-primary hover:bg-surface2 hover:border-border"
                                     }`}
                             >
                                 <Icon className="w-4 h-4 shrink-0" />
