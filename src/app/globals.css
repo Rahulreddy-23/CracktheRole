@@ -153,6 +153,36 @@
   }
 }
 
+/* Nav link animated underline */
+.nav-link-underline {
+  position: relative;
+}
+
+.nav-link-underline::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1.5px;
+  background: linear-gradient(90deg, var(--brand-primary), var(--brand-primary-light));
+  transition: width 0.25s ease-out;
+}
+
+.nav-link-underline:hover::after {
+  width: 100%;
+}
+
+/* Card hover shadow effect */
+.card-hover {
+  transition: box-shadow 0.25s ease-out, transform 0.25s ease-out;
+}
+
+.card-hover:hover {
+  box-shadow: 0 8px 32px -4px rgba(108, 60, 225, 0.1),
+              0 4px 16px -2px rgba(108, 60, 225, 0.06);
+}
+
 /* Company logo ticker animation used in the Hero section */
 @keyframes marquee-scroll {
   0% {

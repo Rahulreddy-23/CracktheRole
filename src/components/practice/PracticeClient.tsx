@@ -102,6 +102,8 @@ export default function PracticeClient({ companies }: PracticeClientProps) {
   const company = searchParams.get("company") || "";
   const bookmarked = searchParams.get("bookmarked") === "true";
 
+  const [autoSeeded, setAutoSeeded] = useState(false);
+
   // Re-fetch from page 1 whenever any filter changes
   useEffect(() => {
     let cancelled = false;
@@ -118,14 +120,55 @@ export default function PracticeClient({ companies }: PracticeClientProps) {
 
     fetch(`/api/practice/questions?${params.toString()}`)
       .then((r) => r.json())
-      .then((data) => {
-        if (!cancelled) {
-          setQuestions(data.questions ?? []);
-          setTotal(data.total ?? 0);
-          setBookmarkedIds(new Set<string>(data.bookmarkedIds ?? []));
-          setHasMore(data.hasMore ?? false);
-          setIsLoading(false);
+      .then(async (data) => {
+        if (cancelled) return;
+
+        const fetchedQuestions = data.questions ?? [];
+        const isUnfilteredLoad =
+          !search && !category && !difficulty && !company && !bookmarked;
+
+        // Auto-seed: if DB is empty and no filters applied, seed automatically
+        if (fetchedQuestions.length === 0 && isUnfilteredLoad && !autoSeeded) {
+          setAutoSeeded(true);
+          setSeeding(true);
+          try {
+            const seedRes = await fetch("/api/practice/seed", {
+              method: "POST",
+            });
+            if (seedRes.ok) {
+              toast.success("Question bank seeded with curated questions.");
+              // Re-fetch after seeding
+              const refetch = await fetch(
+                `/api/practice/questions?page=1`
+              );
+              const refetchData = await refetch.json();
+              if (!cancelled) {
+                setQuestions(refetchData.questions ?? []);
+                setTotal(refetchData.total ?? 0);
+                setBookmarkedIds(
+                  new Set<string>(refetchData.bookmarkedIds ?? [])
+                );
+                setHasMore(refetchData.hasMore ?? false);
+              }
+            } else {
+              toast.error("Failed to auto-seed questions.");
+            }
+          } catch {
+            toast.error("Failed to auto-seed questions.");
+          } finally {
+            if (!cancelled) {
+              setSeeding(false);
+              setIsLoading(false);
+            }
+          }
+          return;
         }
+
+        setQuestions(fetchedQuestions);
+        setTotal(data.total ?? 0);
+        setBookmarkedIds(new Set<string>(data.bookmarkedIds ?? []));
+        setHasMore(data.hasMore ?? false);
+        setIsLoading(false);
       })
       .catch(() => {
         if (!cancelled) setIsLoading(false);

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import WelcomeBanner from "@/components/dashboard/WelcomeBanner";
@@ -6,6 +7,12 @@ import DailyChallenge from "@/components/dashboard/DailyChallenge";
 import RecentSessions from "@/components/dashboard/RecentSessions";
 import ProgressChart from "@/components/dashboard/ProgressChart";
 import QuickActions from "@/components/dashboard/QuickActions";
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+  description:
+    "Your CrackTheRole dashboard. Track interview progress, view recent sessions, and start new mock interviews.",
+};
 
 // ---- Skeleton loaders -------------------------------------------------------
 
@@ -252,7 +259,7 @@ export default async function DashboardPage() {
   const data = await getDashboardData();
 
   return (
-    <main className="min-h-screen bg-background p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+    <main id="main-content" className="min-h-screen bg-background p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
       <div className="flex flex-col gap-6">
         {/* Welcome banner */}
         <Suspense fallback={<BannerSkeleton />}>

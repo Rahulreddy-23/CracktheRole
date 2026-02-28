@@ -1,9 +1,17 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = {
+  title: "Profile",
+  description:
+    "Manage your CrackTheRole profile, target role, companies, and preferences.",
+};
 import { redirect } from "next/navigation";
 import ProfileCard from "@/components/profile/ProfileCard";
 import PreferencesForm from "@/components/profile/PreferencesForm";
 import SubscriptionStatus from "@/components/profile/SubscriptionStatus";
 import AccountActions from "@/components/profile/AccountActions";
+import BackToDashboard from "@/components/shared/BackToDashboard";
 
 async function getProfileData() {
   const supabase = await createClient();
@@ -41,6 +49,7 @@ export default async function ProfilePage() {
 
   return (
     <main className="min-h-screen bg-background p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
+      <BackToDashboard />
       <div className="mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-text-primary">Profile</h1>
         <p className="text-text-secondary text-sm mt-1">Manage your account and preferences</p>

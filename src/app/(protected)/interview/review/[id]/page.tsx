@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ReviewContent from "./review-content";
+import BackToDashboard from "@/components/shared/BackToDashboard";
 
 interface ReviewPageProps {
   params: Promise<{ id: string }>;
@@ -74,6 +75,9 @@ export default async function InterviewReviewPage({ params }: ReviewPageProps) {
 
     return (
       <main className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
+        <div className="max-w-5xl mx-auto">
+          <BackToDashboard />
+        </div>
         <ReviewContent session={mockSession} />
       </main>
     );
@@ -102,6 +106,9 @@ export default async function InterviewReviewPage({ params }: ReviewPageProps) {
 
   return (
     <main className="min-h-screen bg-background p-4 sm:p-6 lg:p-8">
+      <div className="max-w-5xl mx-auto">
+        <BackToDashboard />
+      </div>
       <ReviewContent session={session} />
     </main>
   );

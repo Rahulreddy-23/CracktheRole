@@ -1,9 +1,17 @@
+import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = {
+  title: "Progress Analytics",
+  description:
+    "Track your interview preparation journey with score trends, category breakdown, and performance insights.",
+};
 import { redirect } from "next/navigation";
 import ScoreTrendChart from "@/components/progress/ScoreTrendChart";
 import CategoryRadarChart from "@/components/progress/CategoryRadarChart";
 import SessionsTable from "@/components/progress/SessionsTable";
 import InsightsCard from "@/components/progress/InsightsCard";
+import BackToDashboard from "@/components/shared/BackToDashboard";
 
 async function getProgressData() {
   const supabase = await createClient();
@@ -66,6 +74,7 @@ export default async function ProgressPage() {
 
   return (
     <main className="min-h-screen bg-background p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+      <BackToDashboard />
       <div className="mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold text-text-primary">Progress Analytics</h1>
         <p className="text-text-secondary text-sm mt-1">

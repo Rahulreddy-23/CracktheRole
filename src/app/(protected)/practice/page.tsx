@@ -1,5 +1,13 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import PracticeClient from "@/components/practice/PracticeClient";
+import BackToDashboard from "@/components/shared/BackToDashboard";
+
+export const metadata: Metadata = {
+  title: "Question Bank",
+  description:
+    "Browse and practice DSA, system design, behavioral, and SQL questions tagged by company and difficulty.",
+};
 
 // All companies used across the 30 seed questions.
 // Update this list when adding new questions with different company tags.
@@ -67,6 +75,7 @@ function PracticePageSkeleton() {
 export default function PracticePage() {
   return (
     <main className="min-h-screen bg-background p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto">
+      <BackToDashboard />
       <Suspense fallback={<PracticePageSkeleton />}>
         <PracticeClient companies={COMPANIES} />
       </Suspense>
