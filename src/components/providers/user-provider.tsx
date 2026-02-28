@@ -65,11 +65,9 @@ export function UserProvider({
       }
 
       if (event === "SIGNED_OUT") {
-        router.push("/login");
-      }
-
-      if (event === "TOKEN_REFRESHED") {
-        router.refresh();
+        // Full page reload to clear all client state and avoid stuck transitions
+        window.location.href = "/login";
+        return;
       }
     });
 

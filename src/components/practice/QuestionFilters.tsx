@@ -30,6 +30,54 @@ const DIFFICULTIES = [
   { value: "hard", label: "Hard" },
 ];
 
+const TOPIC_TAGS = [
+  "array",
+  "hash-map",
+  "string",
+  "tree",
+  "graph",
+  "dynamic-programming",
+  "sorting",
+  "binary-search",
+  "stack",
+  "queue",
+  "linked-list",
+  "recursion",
+  "two-pointers",
+  "sliding-window",
+  "greedy",
+  "heap",
+  "design",
+  "dfs",
+  "bfs",
+  "union-find",
+  "divide-and-conquer",
+];
+
+const TOPIC_LABELS: Record<string, string> = {
+  "array": "Array",
+  "hash-map": "HashMap",
+  "string": "String",
+  "tree": "Tree",
+  "graph": "Graph",
+  "dynamic-programming": "DP",
+  "sorting": "Sorting",
+  "binary-search": "Binary Search",
+  "stack": "Stack",
+  "queue": "Queue",
+  "linked-list": "Linked List",
+  "recursion": "Recursion",
+  "two-pointers": "Two Pointers",
+  "sliding-window": "Sliding Window",
+  "greedy": "Greedy",
+  "heap": "Heap",
+  "design": "Design",
+  "dfs": "DFS",
+  "bfs": "BFS",
+  "union-find": "Union Find",
+  "divide-and-conquer": "D&C",
+};
+
 interface QuestionFiltersProps {
   companies: string[];
 }
@@ -43,6 +91,7 @@ export default function QuestionFilters({ companies }: QuestionFiltersProps) {
   const currentCategory = searchParams.get("category") || "all";
   const currentDifficulty = searchParams.get("difficulty") || "all";
   const currentCompany = searchParams.get("company") || "all";
+  const currentTopic = searchParams.get("topic") || "";
   const currentBookmarked = searchParams.get("bookmarked") === "true";
 
   const [searchInput, setSearchInput] = useState(currentSearch);
@@ -97,6 +146,9 @@ export default function QuestionFilters({ companies }: QuestionFiltersProps) {
   if (currentCompany !== "all") {
     activeFilters.push({ key: "company", label: currentCompany });
   }
+  if (currentTopic) {
+    activeFilters.push({ key: "topic", label: TOPIC_LABELS[currentTopic] || currentTopic });
+  }
   if (currentBookmarked) {
     activeFilters.push({ key: "bookmarked", label: "Bookmarked" });
   }
@@ -111,6 +163,7 @@ export default function QuestionFilters({ companies }: QuestionFiltersProps) {
           placeholder="Search by title or description..."
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
+          aria-label="Search questions"
           className="w-full pl-9 pr-9 py-2.5 bg-surface border border-border/50 rounded-lg text-sm text-text-primary placeholder:text-text-secondary/40 focus:outline-none focus:border-brand-primary/50 focus:ring-1 focus:ring-brand-primary/20 transition-colors"
         />
         {searchInput && (
@@ -201,6 +254,24 @@ export default function QuestionFilters({ companies }: QuestionFiltersProps) {
             Bookmarked only
           </Label>
         </div>
+      </div>
+
+      {/* Topic tags — horizontally scrollable */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+        {TOPIC_TAGS.map((tag) => (
+          <button
+            key={tag}
+            onClick={() => updateParams({ topic: currentTopic === tag ? null : tag })}
+            className={cn(
+              "px-2.5 py-1 rounded-full text-[11px] font-medium whitespace-nowrap border transition-colors shrink-0",
+              currentTopic === tag
+                ? "bg-brand-primary/20 text-brand-primary-light border-brand-primary/50"
+                : "bg-surface2/40 text-text-secondary/70 border-border/40 hover:text-text-primary hover:border-border/60"
+            )}
+          >
+            {TOPIC_LABELS[tag] || tag}
+          </button>
+        ))}
       </div>
 
       {/* Active filter chips */}

@@ -22,6 +22,7 @@ interface StatsRowProps {
     totalInterviews: number;
     averageScore: number;
     questionsPracticed: number;
+    currentRankPercentile: number | null;
 }
 
 const containerVariants: import("framer-motion").Variants = {
@@ -45,6 +46,7 @@ export default function StatsRow({
     totalInterviews,
     averageScore,
     questionsPracticed,
+    currentRankPercentile,
 }: StatsRowProps) {
     const stats: StatItem[] = [
         {
@@ -69,7 +71,7 @@ export default function StatsRow({
         {
             icon: TrendingUp,
             label: "Current Rank",
-            value: 15,
+            value: currentRankPercentile ?? 0,
             suffix: "%",
             color: "rgba(245,158,11,0.12)",
         },
@@ -113,6 +115,7 @@ function StatCard({ stat }: { stat: StatItem }) {
     }, [stat.value]);
 
     const isRank = stat.label === "Current Rank";
+    const hasNoData = isRank && stat.value === 0;
 
     return (
         <motion.div
@@ -139,9 +142,15 @@ function StatCard({ stat }: { stat: StatItem }) {
                     {stat.label}
                 </p>
                 <p className="text-2xl font-bold text-text-primary">
-                    {isRank ? "Top " : ""}
-                    {display}
-                    {stat.suffix || ""}
+                    {hasNoData ? (
+                        <span className="text-text-secondary/50">--</span>
+                    ) : (
+                        <>
+                            {isRank ? "Top " : ""}
+                            {display}
+                            {stat.suffix || ""}
+                        </>
+                    )}
                 </p>
             </div>
         </motion.div>

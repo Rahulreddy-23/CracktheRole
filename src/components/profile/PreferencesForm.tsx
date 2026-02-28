@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2, Check } from "lucide-react";
 import toast from "react-hot-toast";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,7 @@ export default function PreferencesForm({
   initialTargetCtc,
 }: Props) {
   const { user } = useUserContext();
+  const router = useRouter();
   const [targetRole, setTargetRole] = useState(initialRole || "");
   const [targetCompanies, setTargetCompanies] = useState<string[]>(initialCompanies);
   const [currentCtc, setCurrentCtc] = useState(String(initialCurrentCtc || ""));
@@ -62,8 +64,8 @@ export default function PreferencesForm({
       prev.includes(company)
         ? prev.filter((c) => c !== company)
         : prev.length < 5
-        ? [...prev, company]
-        : prev
+          ? [...prev, company]
+          : prev
     );
   }
 
@@ -92,6 +94,7 @@ export default function PreferencesForm({
 
       setSaved(true);
       toast.success("Preferences saved successfully.");
+      router.refresh();
       setTimeout(() => setSaved(false), 2000);
     } catch {
       toast.error("Something went wrong.");
@@ -132,11 +135,10 @@ export default function PreferencesForm({
                 <button
                   key={company}
                   onClick={() => toggleCompany(company)}
-                  className={`text-xs px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
-                    selected
+                  className={`text-xs px-3 py-1.5 rounded-full border transition-all cursor-pointer ${selected
                       ? "bg-brand-primary/20 border-brand-primary/50 text-brand-primary-light"
                       : "bg-transparent border-border/50 text-text-secondary hover:border-border hover:text-text-primary"
-                  }`}
+                    }`}
                 >
                   {company}
                 </button>

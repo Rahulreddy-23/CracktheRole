@@ -140,6 +140,9 @@ export type Database = {
           topic_tags: string[];
           hints: string[];
           solution: string | null;
+          starter_code: Record<string, string> | null;
+          test_cases: Array<{ input: string; expected_output: string }> | null;
+          question_number: number | null;
           created_at: string;
         };
         Insert: {
@@ -152,6 +155,9 @@ export type Database = {
           topic_tags?: string[];
           hints?: string[];
           solution?: string | null;
+          starter_code?: Record<string, string> | null;
+          test_cases?: Array<{ input: string; expected_output: string }> | null;
+          question_number?: number | null;
           created_at?: string;
         };
         Update: {
@@ -164,6 +170,9 @@ export type Database = {
           topic_tags?: string[];
           hints?: string[];
           solution?: string | null;
+          starter_code?: Record<string, string> | null;
+          test_cases?: Array<{ input: string; expected_output: string }> | null;
+          question_number?: number | null;
           created_at?: string;
         };
         Relationships: [];
@@ -227,6 +236,39 @@ export type Database = {
           id?: string;
           user_id?: string;
           challenge_id?: string;
+          completed_at?: string;
+        };
+        Relationships: [];
+      };
+      question_completions: {
+        Row: {
+          id: string;
+          user_id: string;
+          question_id: string;
+          language: string;
+          code: string;
+          passed_tests: number;
+          total_tests: number;
+          completed_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          question_id: string;
+          language: string;
+          code: string;
+          passed_tests?: number;
+          total_tests?: number;
+          completed_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          question_id?: string;
+          language?: string;
+          code?: string;
+          passed_tests?: number;
+          total_tests?: number;
           completed_at?: string;
         };
         Relationships: [];

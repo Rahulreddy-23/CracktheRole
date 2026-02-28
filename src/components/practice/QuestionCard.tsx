@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, CheckCircle2 } from "lucide-react";
+import { ChevronDown, CheckCircle2, Code2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import BookmarkButton from "./BookmarkButton";
 import QuestionExpanded from "./QuestionExpanded";
@@ -18,6 +19,9 @@ export interface Question {
   topic_tags: string[];
   hints: string[];
   solution: string | null;
+  starter_code: Record<string, string> | null;
+  test_cases: Array<{ input: string; expected_output: string }> | null;
+  question_number: number | null;
   created_at: string;
 }
 
@@ -49,20 +53,23 @@ const CATEGORY_CONFIG: Record<
 
 const DIFFICULTY_CONFIG: Record<
   string,
-  { label: string; badgeClass: string }
+  { label: string; badgeClass: string; dotClass: string }
 > = {
   easy: {
     label: "Easy",
     badgeClass:
       "bg-brand-success/15 text-brand-success border-brand-success/30",
+    dotClass: "bg-brand-success",
   },
   medium: {
     label: "Medium",
     badgeClass: "bg-yellow-500/15 text-yellow-400 border-yellow-500/30",
+    dotClass: "bg-yellow-400",
   },
   hard: {
     label: "Hard",
     badgeClass: "bg-brand-danger/15 text-brand-danger border-brand-danger/30",
+    dotClass: "bg-brand-danger",
   },
 };
 
@@ -70,6 +77,7 @@ interface QuestionCardProps {
   question: Question;
   isBookmarked: boolean;
   isSolved?: boolean;
+  index: number;
   onBookmarkChange: (questionId: string, isNowBookmarked: boolean) => void;
 }
 
@@ -77,9 +85,11 @@ export default function QuestionCard({
   question,
   isBookmarked,
   isSolved = false,
+  index,
   onBookmarkChange,
 }: QuestionCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const canSolve = question.category === "dsa" || question.category === "sql";
 
   const cat = CATEGORY_CONFIG[question.category];
   const diff = DIFFICULTY_CONFIG[question.difficulty];
@@ -87,15 +97,20 @@ export default function QuestionCard({
   return (
     <motion.div
       layout="position"
-      className="rounded-xl border border-border/40 bg-surface overflow-hidden hover:border-border/60 transition-colors duration-150"
+      className={cn(
+        "rounded-xl border border-border/40 bg-surface overflow-hidden transition-all duration-200",
+        "hover:border-border/70 hover:shadow-sm",
+        isSolved && "border-l-2 border-l-brand-success"
+      )}
     >
       {/* Collapsed header — always visible */}
-      <div className="w-full flex items-center justify-between px-4 py-3.5 gap-3 min-w-0">
+      <div className="w-full flex items-center justify-between px-4 py-3 gap-3 min-w-0">
         <div
           onClick={() => setIsExpanded((prev) => !prev)}
           className="flex-1 flex items-center gap-3 cursor-pointer min-w-0"
           role="button"
           tabIndex={0}
+          aria-label={`${isExpanded ? "Collapse" : "Expand"} ${question.title}`}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
@@ -103,10 +118,15 @@ export default function QuestionCard({
             }
           }}
         >
+          {/* Question number */}
+          <span className="text-xs font-mono text-text-secondary/50 w-6 text-right shrink-0">
+            {question.question_number ?? index + 1}
+          </span>
+
           {/* Expand/collapse indicator */}
           <ChevronDown
             className={cn(
-              "w-4 h-4 text-text-secondary/40 shrink-0 transition-transform duration-200",
+              "w-3.5 h-3.5 text-text-secondary/40 shrink-0 transition-transform duration-200",
               isExpanded && "rotate-180"
             )}
           />
@@ -162,13 +182,25 @@ export default function QuestionCard({
           </div>
         </div>
 
-        {/* Bookmark button */}
-        <BookmarkButton
-          questionId={question.id}
-          isBookmarked={isBookmarked}
-          onToggle={onBookmarkChange}
-          size="sm"
-        />
+        {/* Action buttons */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {canSolve && (
+            <Link
+              href={`/practice/solve/${question.id}`}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-medium bg-brand-success/15 text-brand-success border border-brand-success/30 hover:bg-brand-success/25 transition-colors"
+              aria-label={`Solve ${question.title}`}
+            >
+              <Code2 className="w-3 h-3" />
+              <span className="hidden sm:inline">Solve</span>
+            </Link>
+          )}
+          <BookmarkButton
+            questionId={question.id}
+            isBookmarked={isBookmarked}
+            onToggle={onBookmarkChange}
+            size="sm"
+          />
+        </div>
       </div>
 
       {/* Expanded content with animation */}

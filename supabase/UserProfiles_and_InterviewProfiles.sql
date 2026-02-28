@@ -1,5 +1,3 @@
----------------- Reference file (code in supabase)-----------
-
 -- Users profile table (extends Supabase auth.users)
 CREATE TABLE public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -97,8 +95,6 @@ CREATE TABLE public.challenge_completions (
 );
 
 -- Auto-create profile on signup
--- Uses COALESCE to handle Magic Link / email signups where
--- raw_user_meta_data may not contain full_name or avatar_url.
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN

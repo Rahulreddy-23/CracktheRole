@@ -80,6 +80,11 @@ export async function GET(request: NextRequest) {
       query = query.contains("company_tags", [company]);
     }
 
+    const topic = searchParams.get("topic") || "";
+    if (topic) {
+      query = query.contains("topic_tags", [topic]);
+    }
+
     if (bookmarkedOnly) {
       query = query.in("id", bookmarkedIds);
     }
@@ -89,6 +94,7 @@ export async function GET(request: NextRequest) {
       error,
       count,
     } = await query
+      .order("question_number", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: true })
       .range(offset, offset + limit - 1);
 

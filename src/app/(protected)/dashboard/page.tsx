@@ -196,6 +196,11 @@ export default async function DashboardPage() {
             totalInterviews={data.totalInterviews}
             averageScore={data.averageScore}
             questionsPracticed={data.questionsPracticed}
+            currentRankPercentile={
+              data.totalInterviews > 0
+                ? Math.max(1, Math.round(100 - data.averageScore * 0.85))
+                : null
+            }
           />
         </Suspense>
 

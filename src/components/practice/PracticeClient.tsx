@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { BookMarked, SearchX, Database } from "lucide-react";
+import { motion } from "framer-motion";
+import { BookMarked, SearchX, Database, BarChart3 } from "lucide-react";
 import toast from "react-hot-toast";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import QuestionFilters from "./QuestionFilters";
 import QuestionCard, { type Question } from "./QuestionCard";
@@ -16,6 +18,7 @@ function QuestionSkeleton() {
   return (
     <div className="rounded-xl border border-border/40 bg-surface px-4 py-3.5 animate-pulse">
       <div className="flex items-center gap-3">
+        <div className="w-6 h-4 bg-border/30 rounded shrink-0" />
         <div className="w-4 h-4 bg-border/30 rounded shrink-0" />
         <div className="h-4 flex-1 bg-border/30 rounded max-w-sm" />
         <div className="h-5 w-16 bg-border/20 rounded-full hidden sm:block" />
@@ -23,6 +26,56 @@ function QuestionSkeleton() {
         <div className="h-4 w-4 bg-border/20 rounded" />
       </div>
     </div>
+  );
+}
+
+function StatsHeader({
+  total,
+  easyCt,
+  mediumCt,
+  hardCt,
+  solvedCt,
+}: {
+  total: number;
+  easyCt: number;
+  mediumCt: number;
+  hardCt: number;
+  solvedCt: number;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex flex-wrap items-center gap-3 mb-6 p-4 rounded-xl border border-border/40 bg-surface/80"
+    >
+      <div className="flex items-center gap-2 mr-4">
+        <BarChart3 className="w-4 h-4 text-text-secondary/50" />
+        <span className="text-sm font-semibold text-text-primary">
+          {total} <span className="text-text-secondary font-normal">Problems</span>
+        </span>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Badge variant="outline" className="text-[11px] bg-brand-success/15 text-brand-success border-brand-success/30 gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-brand-success inline-block" />
+          Easy {easyCt}
+        </Badge>
+        <Badge variant="outline" className="text-[11px] bg-yellow-500/15 text-yellow-400 border-yellow-500/30 gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 inline-block" />
+          Medium {mediumCt}
+        </Badge>
+        <Badge variant="outline" className="text-[11px] bg-brand-danger/15 text-brand-danger border-brand-danger/30 gap-1">
+          <span className="w-1.5 h-1.5 rounded-full bg-brand-danger inline-block" />
+          Hard {hardCt}
+        </Badge>
+      </div>
+
+      <div className="ml-auto">
+        <Badge variant="outline" className="text-[11px] bg-brand-primary/15 text-brand-primary-light border-brand-primary/30">
+          ✓ Solved {solvedCt}
+        </Badge>
+      </div>
+    </motion.div>
   );
 }
 
@@ -90,6 +143,7 @@ export default function PracticeClient({ companies }: PracticeClientProps) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [total, setTotal] = useState(0);
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());
+  const [solvedIds, setSolvedIds] = useState<Set<string>>(new Set());
   const [hasMore, setHasMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
@@ -100,9 +154,22 @@ export default function PracticeClient({ companies }: PracticeClientProps) {
   const category = searchParams.get("category") || "";
   const difficulty = searchParams.get("difficulty") || "";
   const company = searchParams.get("company") || "";
+  const topic = searchParams.get("topic") || "";
   const bookmarked = searchParams.get("bookmarked") === "true";
 
   const [autoSeeded, setAutoSeeded] = useState(false);
+
+  // Fetch solved question IDs
+  useEffect(() => {
+    fetch("/api/practice/completions")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.completedIds) {
+          setSolvedIds(new Set<string>(data.completedIds));
+        }
+      })
+      .catch(() => { /* ignore */ });
+  }, []);
 
   // Re-fetch from page 1 whenever any filter changes
   useEffect(() => {
@@ -115,6 +182,7 @@ export default function PracticeClient({ companies }: PracticeClientProps) {
     if (category) params.set("category", category);
     if (difficulty) params.set("difficulty", difficulty);
     if (company) params.set("company", company);
+    if (topic) params.set("topic", topic);
     if (bookmarked) params.set("bookmarked", "true");
     params.set("page", "1");
 
@@ -125,7 +193,7 @@ export default function PracticeClient({ companies }: PracticeClientProps) {
 
         const fetchedQuestions = data.questions ?? [];
         const isUnfilteredLoad =
-          !search && !category && !difficulty && !company && !bookmarked;
+          !search && !category && !difficulty && !company && !topic && !bookmarked;
 
         // Auto-seed: if DB is empty and no filters applied, seed automatically
         if (fetchedQuestions.length === 0 && isUnfilteredLoad && !autoSeeded) {
@@ -178,7 +246,7 @@ export default function PracticeClient({ companies }: PracticeClientProps) {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, category, difficulty, company, bookmarked]);
+  }, [search, category, difficulty, company, topic, bookmarked]);
 
   const handleLoadMore = async () => {
     setIsLoadingMore(true);
@@ -190,6 +258,7 @@ export default function PracticeClient({ companies }: PracticeClientProps) {
       if (category) params.set("category", category);
       if (difficulty) params.set("difficulty", difficulty);
       if (company) params.set("company", company);
+      if (topic) params.set("topic", topic);
       if (bookmarked) params.set("bookmarked", "true");
       params.set("page", nextPage.toString());
 
@@ -220,7 +289,12 @@ export default function PracticeClient({ companies }: PracticeClientProps) {
 
   const showNoBookmarks = bookmarked && !isLoading && questions.length === 0;
   const showNoResults = !bookmarked && !isLoading && questions.length === 0;
-  const isUnfiltered = !search && !category && !difficulty && !company && !bookmarked;
+  const isUnfiltered = !search && !category && !difficulty && !company && !topic && !bookmarked;
+
+  // Compute stats from all loaded questions
+  const easyCt = questions.filter((q) => q.difficulty === "easy").length;
+  const mediumCt = questions.filter((q) => q.difficulty === "medium").length;
+  const hardCt = questions.filter((q) => q.difficulty === "hard").length;
 
   async function handleSeed() {
     setSeeding(true);
@@ -228,7 +302,6 @@ export default function PracticeClient({ companies }: PracticeClientProps) {
       const res = await fetch("/api/practice/seed", { method: "POST" });
       if (res.ok) {
         toast.success("Questions loaded successfully!");
-        // Trigger a re-fetch by updating a dep
         window.location.reload();
       } else {
         toast.error("Failed to load questions. Please try again.");
@@ -247,13 +320,24 @@ export default function PracticeClient({ companies }: PracticeClientProps) {
         <h1 className="text-2xl font-bold text-text-primary">Question Bank</h1>
         {!isLoading && (
           <p className="text-sm text-text-secondary mt-1">
-            {total} question{total !== 1 ? "s" : ""} available
+            Practice problems to sharpen your skills
           </p>
         )}
         {isLoading && (
           <div className="h-4 w-32 bg-border/30 rounded mt-1 animate-pulse" />
         )}
       </div>
+
+      {/* Stats header */}
+      {!isLoading && questions.length > 0 && (
+        <StatsHeader
+          total={total}
+          easyCt={easyCt}
+          mediumCt={mediumCt}
+          hardCt={hardCt}
+          solvedCt={solvedIds.size}
+        />
+      )}
 
       {/* Filters */}
       <QuestionFilters companies={companies} />
@@ -277,11 +361,13 @@ export default function PracticeClient({ companies }: PracticeClientProps) {
       ) : (
         <>
           <div className="space-y-2">
-            {questions.map((question) => (
+            {questions.map((question, idx) => (
               <QuestionCard
                 key={question.id}
                 question={question}
                 isBookmarked={bookmarkedIds.has(question.id)}
+                isSolved={solvedIds.has(question.id)}
+                index={idx}
                 onBookmarkChange={handleBookmarkChange}
               />
             ))}

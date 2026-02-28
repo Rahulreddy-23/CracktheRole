@@ -9,32 +9,31 @@ import {
     UserCircle,
     ArrowRight,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 
 const ACTIONS = [
     {
         label: "Start Mock Interview",
         href: "/interview/setup",
         icon: MessageSquare,
-        variant: "default" as const,
+        isPrimary: true,
     },
     {
         label: "Browse Questions",
         href: "/practice",
         icon: BookOpen,
-        variant: "outline" as const,
+        isPrimary: false,
     },
     {
         label: "View Salary Data",
         href: "/salary",
         icon: IndianRupee,
-        variant: "outline" as const,
+        isPrimary: false,
     },
     {
         label: "Update Profile",
         href: "/profile",
         icon: UserCircle,
-        variant: "ghost" as const,
+        isPrimary: false,
     },
 ];
 
@@ -74,26 +73,20 @@ export default function QuickActions() {
             >
                 {ACTIONS.map((action) => {
                     const Icon = action.icon;
-                    const isPrimary = action.variant === "default";
 
                     return (
                         <motion.div key={action.label} variants={itemVariants}>
-                            <Button
-                                asChild
-                                variant={action.variant}
-                                className={`w-full justify-start gap-3 h-10 text-sm font-medium ${isPrimary
-                                        ? "bg-brand-primary hover:bg-brand-primary/90 text-white shadow-md shadow-brand-primary/15"
-                                        : action.variant === "outline"
-                                            ? "border-border/50 text-text-secondary hover:text-text-primary hover:bg-surface2 bg-transparent"
-                                            : "text-text-secondary hover:text-text-primary hover:bg-surface2"
+                            <Link
+                                href={action.href}
+                                className={`flex items-center gap-3 w-full h-10 px-4 rounded-md text-sm font-medium transition-all duration-200 ${action.isPrimary
+                                        ? "bg-brand-primary text-white shadow-md shadow-brand-primary/15 hover:bg-brand-primary/90"
+                                        : "bg-transparent border border-border/50 text-text-secondary hover:text-text-primary hover:bg-surface2 hover:border-border"
                                     }`}
                             >
-                                <Link href={action.href}>
-                                    <Icon className="w-4 h-4 shrink-0" />
-                                    <span className="flex-1 text-left">{action.label}</span>
-                                    <ArrowRight className="w-3 h-3 opacity-40" />
-                                </Link>
-                            </Button>
+                                <Icon className="w-4 h-4 shrink-0" />
+                                <span className="flex-1 text-left">{action.label}</span>
+                                <ArrowRight className="w-3 h-3 opacity-40" />
+                            </Link>
                         </motion.div>
                     );
                 })}

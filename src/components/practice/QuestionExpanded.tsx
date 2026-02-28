@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ChevronDown, ChevronRight, Eye, EyeOff, Play } from "lucide-react";
+import { ChevronDown, ChevronRight, Eye, EyeOff, Play, Code2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import BookmarkButton from "./BookmarkButton";
 import { cn } from "@/lib/utils";
@@ -262,15 +262,33 @@ export default function QuestionExpanded({
       )}
 
       {/* Footer actions */}
-      <div className="flex items-center justify-between pt-1">
-        <Button
-          onClick={handlePractice}
-          size="sm"
-          className="bg-brand-primary hover:bg-brand-primary/90 text-white text-xs h-8 px-4 gap-1.5"
-        >
-          <Play className="w-3.5 h-3.5" />
-          Practice in Interview
-        </Button>
+      <div className="flex flex-wrap items-center justify-between pt-1 gap-3">
+        <div className="flex items-center gap-2">
+          {(question.category === "dsa" || question.category === "sql") && (
+            <Button
+              onClick={() => router.push(`/practice/solve/${question.id}`)}
+              size="sm"
+              className="bg-brand-success hover:bg-brand-success/90 text-white text-xs h-8 px-4 gap-1.5 shadow-sm shadow-brand-success/20"
+            >
+              <Code2 className="w-3.5 h-3.5" />
+              Solve this question
+            </Button>
+          )}
+          <Button
+            onClick={handlePractice}
+            size="sm"
+            variant={(question.category === "dsa" || question.category === "sql") ? "outline" : "default"}
+            className={cn(
+              "text-xs h-8 px-4 gap-1.5",
+              (question.category === "dsa" || question.category === "sql")
+                ? "border-brand-primary/30 text-brand-primary-light hover:text-brand-primary hover:bg-brand-primary/10"
+                : "bg-brand-primary hover:bg-brand-primary/90 text-white shadow-sm shadow-brand-primary/20"
+            )}
+          >
+            <Play className="w-3.5 h-3.5" />
+            Practice in Interview
+          </Button>
+        </div>
 
         <div className="flex items-center gap-2">
           <BookmarkButton

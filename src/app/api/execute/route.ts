@@ -67,6 +67,23 @@ export async function POST(request: NextRequest) {
 
     const startTime = Date.now();
 
+    // Dynamically wrap code if stdin is provided (meaning it's a test case execution)
+    let finalCode = code;
+
+    // Test case inputs are heavily simplified: e.g. "nums = [2, 7, 11, 15], target = 9"
+    // For a generic sandbox to evaluate a string like this reliably we'll provide a wrapper
+    // that uses eval() for JS/Python since these are practice problems.
+    if (stdin) {
+      if (language === "python") {
+        finalCode = `import sys\nimport ast\nimport json\nimport re\n\n${code}\n\n# --- Test Execution Wrapper ---\nif __name__ == "__main__":\n    lines = re.split(r',\\s*(?=\\w+\\s*=)', sys.stdin.read().strip())\n    kwargs = {}\n    for line in lines:\n        if "=" in line:\n            key, val = line.split("=", 1)\n            key = key.strip()\n            val = val.strip()\n            try:\n                # Evaluate lists/numbers\n                kwargs[key] = ast.literal_eval(val)\n            except Exception:\n                # Fallback to string\n                kwargs[key] = val\n    \n    # Assume last defined function is the target\n    funcs = [func for name, func in globals().items() if callable(func) and not name.startswith("__") and name != "ast" and name != "sys" and name != "json" and name != "re"]\n    if getattr(funcs[-1], "__name__", "") == "twoSum" or kwargs:\n       try:\n         res = funcs[-1](**kwargs)\n         if isinstance(res, list) and len(res) == 0:\n             print("[]")\n         elif res is None:\n             print("None")\n         elif isinstance(res, bool):\n             print(str(res).lower())\n         else:\n             print(json.dumps(res, separators=(", ", ": ")))\n       except Exception as e:\n         print(f"Error: {e}")\n`;
+      } else if (language === "javascript") {
+        finalCode = `${code}\n\n// --- Test Execution Wrapper ---\nconst fs = require('fs');\nconst input = fs.readFileSync('/dev/stdin', 'utf-8').trim();\nconst pairs = input.split(/,\\s+(?=\\w+\\s*=)/);\nconst args = pairs.map(p => {\n  const valStr = p.split('=')[1].trim();\n  try { return JSON.parse(valStr); } catch(e) { return valStr; }\n});\nconst funcs = Object.values(global).filter(f => typeof f === 'function' && f.name !== 'require' && f.name !== 'fetch');\n// Get last defined function\nconst targetFunc = arguments.callee ? null : null; // In Node script, functions are in scope\nconst codeMatch = \`${code}\`.match(/function\\s+([a-zA-Z0-9_]+)/);\nif (codeMatch) {\n   const fName = codeMatch[1];\n   try {\n      const res = eval(fName)(...args);\n      if (typeof res === 'object' && res !== null) {\n          const str = JSON.stringify(res);\n          console.log(str.replace(/,/g, ', '));\n      } else {\n          console.log(res);\n      }\n   } catch (e) {\n      console.log("Error:", e.message);\n   }\n}\n`;
+      } else if (language === "java") {
+        // Java is much harder to generically wrap via string manipulation without AST parsing.
+        // We will fallback to returning a message for now or simply keeping the user's main method.
+      }
+    }
+
     let judge0Res: Response;
     try {
       judge0Res = await fetch(
@@ -76,7 +93,7 @@ export async function POST(request: NextRequest) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             language_id: languageId,
-            source_code: Buffer.from(code).toString("base64"),
+            source_code: Buffer.from(finalCode).toString("base64"),
             stdin: stdin ? Buffer.from(stdin).toString("base64") : undefined,
             cpu_time_limit: 10,
             wall_time_limit: 15,
