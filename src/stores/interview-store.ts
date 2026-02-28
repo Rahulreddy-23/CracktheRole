@@ -19,6 +19,12 @@ interface InterviewState {
   editorCode: string;
   editorLanguage: string;
 
+  // Code execution
+  executionOutput: string;
+  executionError: string;
+  executionTime: number | null;
+  isExecuting: boolean;
+
   // Actions
   setSession: (sessionId: string, config: InterviewConfig) => void;
   addMessage: (message: ChatMessage) => void;
@@ -30,6 +36,9 @@ interface InterviewState {
   setTimerRunning: (running: boolean) => void;
   setEditorCode: (code: string) => void;
   setEditorLanguage: (lang: string) => void;
+  setExecutionResult: (output: string, error: string, time: number) => void;
+  setExecuting: (executing: boolean) => void;
+  clearExecution: () => void;
   reset: () => void;
 }
 
@@ -43,6 +52,10 @@ const INITIAL_STATE = {
   isTimerRunning: false,
   editorCode: "",
   editorLanguage: "python",
+  executionOutput: "",
+  executionError: "",
+  executionTime: null as number | null,
+  isExecuting: false,
 };
 
 export const useInterviewStore = create<InterviewState>((set, get) => ({
@@ -88,6 +101,14 @@ export const useInterviewStore = create<InterviewState>((set, get) => ({
   setEditorCode: (code) => set({ editorCode: code }),
 
   setEditorLanguage: (lang) => set({ editorLanguage: lang }),
+
+  setExecutionResult: (output, error, time) =>
+    set({ executionOutput: output, executionError: error, executionTime: time }),
+
+  setExecuting: (executing) => set({ isExecuting: executing }),
+
+  clearExecution: () =>
+    set({ executionOutput: "", executionError: "", executionTime: null }),
 
   reset: () => set({ ...INITIAL_STATE }),
 }));
