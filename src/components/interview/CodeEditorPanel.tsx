@@ -425,13 +425,7 @@ export default function CodeEditorPanel({
                     <div className="w-px h-4 bg-border/40 mx-1" />
                     <Select value={editorLanguage} onValueChange={handleLanguageChange}>
                         <SelectTrigger className="w-30 h-7 text-xs bg-background/50 border-border/40 text-text-secondary gap-1">
-                            {currentLang && (
-                                <span className="text-[10px] font-bold text-brand-primary-light bg-brand-primary/15 px-1.5 py-0.5 rounded">
-                                    {currentLang.icon}
-                                </span>
-                            )}
                             <SelectValue />
-                            <ChevronDown className="w-3 h-3 opacity-50" />
                         </SelectTrigger>
                         <SelectContent className="bg-surface border-border/50">
                             {LANGUAGES.map((lang) => (
@@ -572,9 +566,8 @@ export default function CodeEditorPanel({
 
             {/* Output console — collapses to a thin header bar when not in use */}
             <div
-                className={`border-t border-border/40 flex flex-col bg-background/50 transition-all duration-200 ${
-                    isConsoleOpen ? "h-40" : "h-8"
-                }`}
+                className={`border-t border-border/40 flex flex-col bg-background/50 transition-all duration-200 ${isConsoleOpen ? "h-40" : "h-8"
+                    }`}
             >
                 {/* Console header / toggle */}
                 <button
