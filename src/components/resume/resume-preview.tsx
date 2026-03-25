@@ -56,7 +56,6 @@ const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
           ref={ref}
           className={cn(
             "bg-zinc-900/60 rounded-xl p-8 text-sm leading-relaxed font-sans print:bg-white print:text-black print:rounded-none print:p-0",
-            "**:print:text-black **:print:border-zinc-300",
             className
           )}
         >

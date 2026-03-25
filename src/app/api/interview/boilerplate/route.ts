@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { callClaude, HAIKU } from "@/lib/claude";
 import type { InterviewProblem } from "@/types";
 
+export const maxDuration = 30;
+
 interface BoilerplateRequest {
   language: string;
   problem: InterviewProblem;

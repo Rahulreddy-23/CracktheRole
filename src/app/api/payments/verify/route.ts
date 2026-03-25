@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import Razorpay from "razorpay";
-import { adminDb, FieldValue } from "@/lib/firebase-admin";
+import { adminDb, FieldValue, verifyAuthToken } from "@/lib/firebase-admin";
 import { PRICING } from "@/config/constants";
 
 export const runtime = "nodejs";
@@ -10,7 +10,6 @@ interface VerifyRequest {
   razorpay_order_id: string;
   razorpay_payment_id: string;
   razorpay_signature: string;
-  userId: string;
   packType: string;
 }
 
@@ -56,13 +55,21 @@ async function activatePack(
 }
 
 export async function POST(req: NextRequest) {
+  // ── Verify Firebase auth token ────────────────────────────────────────────
+  let userId: string;
+  try {
+    const token = req.headers.get("authorization")?.replace("Bearer ", "").trim();
+    userId = await verifyAuthToken(token);
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const body = (await req.json()) as VerifyRequest;
     const {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
-      userId,
       packType,
     } = body;
 
@@ -70,7 +77,6 @@ export async function POST(req: NextRequest) {
       !razorpay_order_id ||
       !razorpay_payment_id ||
       !razorpay_signature ||
-      !userId ||
       !packType
     ) {
       return NextResponse.json(

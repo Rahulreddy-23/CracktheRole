@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { adminDb, FieldValue } from "@/lib/firebase-admin";
 import { SONNET } from "@/lib/claude";
 
+export const maxDuration = 30;
+
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 
 interface ConversationMessage {
@@ -14,7 +16,6 @@ interface ChatRequest {
   message: string;
   code: string;
   conversationHistory: ConversationMessage[];
-  problemContext: string;
   interviewType: string;
 }
 
@@ -53,7 +54,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const { sessionId, message, code, conversationHistory, problemContext, interviewType } = body;
+  const { sessionId, message, code, conversationHistory, interviewType } = body;
 
   if (!message || !sessionId) {
     return NextResponse.json({ error: "Missing message or sessionId" }, { status: 400 });
@@ -62,6 +63,20 @@ export async function POST(request: Request) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "AI service not configured" }, { status: 500 });
+  }
+
+  // Read problem context from Firestore — prevents client tampering and avoids
+  // sending the full problem description on every chat request
+  let problemContext = "";
+  try {
+    const sessionDoc = await adminDb.collection("interviews").doc(sessionId).get();
+    const sessionData = sessionDoc.data();
+    if (sessionData?.problem) {
+      const p = sessionData.problem as { title?: string; description?: string };
+      problemContext = `${p.title ?? ""}\n\n${p.description ?? ""}`.trim();
+    }
+  } catch {
+    // Non-fatal: proceed with empty context rather than blocking the chat
   }
 
   const systemPrompt = buildSystemPrompt(problemContext, code ?? "", interviewType ?? "coding");

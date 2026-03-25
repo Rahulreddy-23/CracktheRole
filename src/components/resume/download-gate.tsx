@@ -12,8 +12,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { doc, updateDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
 import { toast } from "sonner";
 import { usePayment } from "@/hooks/use-payment";
 import { useAuth } from "@/hooks/use-auth";
@@ -28,12 +26,6 @@ interface DownloadGateProps {
   isPaidDownload: boolean;
 }
 
-async function markResumeAsPaid(resumeId: string) {
-  if (!resumeId || resumeId === "unsaved") return;
-  const ref = doc(db, "resumes", resumeId);
-  await updateDoc(ref, { isPaidDownload: true });
-}
-
 export default function DownloadGate({
   resumeId,
   contentRef,
@@ -44,7 +36,7 @@ export default function DownloadGate({
   const [open, setOpen] = useState(false);
   const [localPaid, setLocalPaid] = useState(isPaidDownload);
   const { purchase, isProcessing } = usePayment();
-  const { userProfile } = useAuth();
+  const { userProfile, user } = useAuth();
 
   const handlePrint = useReactToPrint({ contentRef });
 
@@ -57,8 +49,16 @@ export default function DownloadGate({
   const handlePurchase = async (packType: "starter_pack" | "pro_monthly") => {
     await purchase(packType, async () => {
       // Mark this specific resume as paid (for starter pack; Pro grants globally)
-      if (packType === "starter_pack") {
-        await markResumeAsPaid(resumeId);
+      if (packType === "starter_pack" && resumeId && resumeId !== "unsaved" && user) {
+        const token = await user.getIdToken();
+        await fetch("/api/payments/mark-resume-paid", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+          body: JSON.stringify({ resumeId }),
+        });
         setLocalPaid(true);
       }
       setOpen(false);

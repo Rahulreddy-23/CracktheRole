@@ -381,13 +381,18 @@ function BillingTab() {
     if (!user) return;
     setCancelling(true);
     try {
-      await updateDoc(doc(db, "users", user.uid), {
-        plan: "free",
-        interviewsLimit: 1,
-        resumesLimit: 1,
-        resumeDownloadsLeft: 0,
-        planExpiresAt: null,
+      const token = await user.getIdToken();
+      const res = await fetch("/api/payments/cancel", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`,
+        },
       });
+      if (!res.ok) {
+        const err = (await res.json()) as { error?: string };
+        throw new Error(err.error ?? "Failed to cancel plan");
+      }
       await refreshProfile();
       toast.success("Plan cancelled. You're now on the Free plan.");
     } catch {

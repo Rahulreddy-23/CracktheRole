@@ -29,7 +29,7 @@ export function useCodeExecution() {
   const [isRunning, setIsRunning] = useState(false);
   const [result, setResult] = useState<CodeExecutionResult | null>(null);
 
-  const execute = async (
+  const execute = useCallback(async (
     code: string,
     language: SupportedLanguage,
     schema?: string,
@@ -95,7 +95,7 @@ export function useCodeExecution() {
     } finally {
       setIsRunning(false);
     }
-  };
+  }, []);
 
   const reset = useCallback(() => setResult(null), []);
 

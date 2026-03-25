@@ -219,14 +219,14 @@ export default function InterviewPage() {
 
   const topics = INTERVIEW_TOPICS[type] as string[];
 
-  const resolvedTopic =
-    topic === "random"
-      ? topics[Math.floor(Math.random() * topics.length)]
-      : topic;
-
   async function handleStart() {
     if (!user) return;
     setStarting(true);
+
+    const resolvedTopic =
+      topic === "random"
+        ? topics[Math.floor(Math.random() * topics.length)]
+        : topic;
 
     try {
       const res = await fetch("/api/interview", {

@@ -30,11 +30,6 @@ const stagger = {
   show: { transition: { staggerChildren: 0.12 } },
 };
 
-const staggerFast = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.08 } },
-};
-
 function SectionWrapper({
   children,
   className,

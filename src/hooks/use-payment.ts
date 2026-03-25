@@ -55,10 +55,14 @@ export function usePayment() {
 
     try {
       // Step 1: Create Razorpay order on the server
+      const orderToken = await user.getIdToken();
       const orderRes = await fetch("/api/payments/create-order", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ packType, userId: user.uid }),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${orderToken}`,
+        },
+        body: JSON.stringify({ packType }),
       });
 
       if (!orderRes.ok) {
@@ -86,14 +90,18 @@ export function usePayment() {
           clearTimeout(timeoutId);
           try {
             // Step 3: Verify payment on the server and activate pack
+            // Get a fresh token — payment modal may have been open for a while
+            const verifyToken = await user.getIdToken();
             const verifyRes = await fetch("/api/payments/verify", {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${verifyToken}`,
+              },
               body: JSON.stringify({
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_payment_id: response.razorpay_payment_id,
                 razorpay_signature: response.razorpay_signature,
-                userId: user.uid,
                 packType,
                 amount: orderData.amount,
               }),

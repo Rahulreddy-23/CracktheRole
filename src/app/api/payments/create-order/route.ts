@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Razorpay from "razorpay";
+import { verifyAuthToken } from "@/lib/firebase-admin";
 import { PRICING, GST_RATE } from "@/config/constants";
 
 export const runtime = "nodejs";
@@ -18,14 +19,20 @@ const PACK_NAMES: Record<string, string> = {
 };
 
 export async function POST(req: NextRequest) {
+  // ── Verify Firebase auth token ────────────────────────────────────────────
+  let userId: string;
   try {
-    const { packType, userId } = (await req.json()) as {
-      packType: string;
-      userId: string;
-    };
+    const token = req.headers.get("authorization")?.replace("Bearer ", "").trim();
+    userId = await verifyAuthToken(token);
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-    if (!packType || !userId) {
-      return NextResponse.json({ error: "packType and userId are required" }, { status: 400 });
+  try {
+    const { packType } = (await req.json()) as { packType: string };
+
+    if (!packType) {
+      return NextResponse.json({ error: "packType is required" }, { status: 400 });
     }
 
     if (!(packType in PACK_PRICES)) {

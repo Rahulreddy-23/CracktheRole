@@ -1,5 +1,6 @@
 import { initializeApp, getApps, cert } from "firebase-admin/app";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import { getAuth } from "firebase-admin/auth";
 
 if (!getApps().length) {
   initializeApp({
@@ -13,3 +14,13 @@ if (!getApps().length) {
 
 export const adminDb = getFirestore();
 export { FieldValue };
+
+/**
+ * Verifies a Firebase ID token and returns the authenticated user's UID.
+ * Throws if the token is missing or invalid.
+ */
+export async function verifyAuthToken(token: string | null | undefined): Promise<string> {
+  if (!token) throw new Error("Missing auth token");
+  const decoded = await getAuth().verifyIdToken(token);
+  return decoded.uid;
+}

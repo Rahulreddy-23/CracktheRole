@@ -487,9 +487,6 @@ export default function InterviewSessionPage() {
 
   // ── Derived ──────────────────────────────────────────────────────────────────
 
-  const problemContext = session?.problem
-    ? `${session.problem.title}\n\n${session.problem.description}`
-    : "";
   const monacoId = LANGUAGE_CONFIG[selectedLanguage]?.monacoId ?? "plaintext";
   const isCoding = session?.type === "coding";
   const isOverTime =
@@ -598,7 +595,6 @@ export default function InterviewSessionPage() {
                   messages={messages}
                   onMessagesChange={setMessages}
                   code={code}
-                  problemContext={problemContext}
                   interviewType={session.type}
                 />
               </TabsContent>

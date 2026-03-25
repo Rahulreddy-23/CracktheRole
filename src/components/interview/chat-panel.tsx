@@ -21,7 +21,6 @@ interface ChatPanelProps {
   messages: ChatMessage[];
   onMessagesChange: (messages: ChatMessage[]) => void;
   code: string;
-  problemContext: string;
   interviewType: string;
 }
 
@@ -30,7 +29,6 @@ export default function ChatPanel({
   messages,
   onMessagesChange,
   code,
-  problemContext,
   interviewType,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
@@ -91,7 +89,6 @@ export default function ChatPanel({
           message: text,
           code,
           conversationHistory: trimmedHistory,
-          problemContext,
           interviewType,
         }),
       });
