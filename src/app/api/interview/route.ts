@@ -1,6 +1,57 @@
 import { NextResponse } from "next/server";
-import { callClaude, extractJSON } from "@/lib/claude";
+import { callClaudeWithTool } from "@/lib/claude";
 import type { InterviewProblem } from "@/types";
+
+// ── Tool schema ────────────────────────────────────────────────────────────
+
+const PROBLEM_TOOL = {
+  name: "submit_problem",
+  description: "Submit the generated interview problem in structured format.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      title: { type: "string" },
+      description: { type: "string" },
+      examples: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            input: { type: "string" },
+            output: { type: "string" },
+            explanation: { type: "string" },
+          },
+          required: ["input", "output"],
+        },
+      },
+      constraints: { type: "array", items: { type: "string" } },
+      hints: { type: "array", items: { type: "string" } },
+      difficulty: { type: "string" },
+      topic: { type: "string" },
+      boilerplate: {
+        type: "object",
+        description:
+          "Map of language to starter code string, or null if not requested.",
+      },
+    },
+    required: [
+      "title",
+      "description",
+      "examples",
+      "constraints",
+      "hints",
+      "difficulty",
+      "topic",
+    ],
+  },
+};
+
+// ── Input sanitization ─────────────────────────────────────────────────────
+
+/** Limit length and strip characters that have no place in a topic name. */
+function sanitizeTopic(topic: string): string {
+  return topic.trim().slice(0, 100).replace(/[<>"'`\\]/g, "");
+}
 
 // ── Prompt builders ────────────────────────────────────────────────────────
 
@@ -11,89 +62,36 @@ function buildCodingPrompt(
   needBoilerplate: boolean
 ): string {
   return `You are an expert technical interviewer at a top-tier tech company (Google, Meta, Amazon).
-Generate a ${difficulty} coding interview problem about "${topic}".
-
-Return ONLY a valid JSON object with this exact structure (no markdown, no explanation outside the JSON):
-{
-  "title": "Concise problem title",
-  "description": "Full problem statement in plain text. Explain what the function should do, include context. Be thorough.",
-  "examples": [
-    { "input": "nums = [2,7,11,15], target = 9", "output": "[0,1]", "explanation": "Because nums[0] + nums[1] == 9." },
-    { "input": "nums = [3,2,4], target = 6", "output": "[1,2]" }
-  ],
-  "constraints": [
-    "2 <= nums.length <= 10^4",
-    "-10^9 <= nums[i] <= 10^9"
-  ],
-  "hints": [
-    "Think about what data structure lets you look up values in O(1)",
-    "Consider storing the complement of each element"
-  ],
-  "difficulty": "${difficulty}",
-  "topic": "${topic}",
-  "boilerplate": {
-    "${language}": ${needBoilerplate ? `"// Write a complete function signature with parameter names and types as comments\\n// e.g. for Python: def function_name(param: type) -> return_type:\\n    pass"` : "null"}
-  }
-}
+Generate a ${difficulty} coding interview problem about the topic: ${topic}
 
 Requirements:
 - The problem must be solvable in 30 minutes by a mid-level engineer
 - Include exactly 2-3 examples, at least one edge case
 - Include exactly 3-4 constraints (time/space complexity hints acceptable)
 - Include exactly 2-3 hints that progressively reveal the solution approach
-- Boilerplate must include the correct function signature for ${language} with parameter names${needBoilerplate ? "" : " (set to null since boilerplate is not requested)"}`;
+- Set the boilerplate key "${language}" to ${needBoilerplate ? `a complete function signature with parameter names and types as comments` : "null"}`;
 }
 
 function buildSystemDesignPrompt(difficulty: string, topic: string): string {
   return `You are a senior staff engineer conducting a system design interview.
-Generate a ${difficulty} system design interview question for "${topic}".
+Generate a ${difficulty} system design interview question for the topic: ${topic}
 
-Return ONLY a valid JSON object:
-{
-  "title": "Design [System Name]",
-  "description": "Detailed problem statement covering: scenario context, what needs to be built, functional requirements (as a numbered list), non-functional requirements (scale, latency, availability targets). Be specific with numbers (e.g., 10M DAU, 1000 writes/sec).",
-  "examples": [],
-  "constraints": [
-    "Handle 10 million daily active users",
-    "99.99% uptime SLA",
-    "Read latency < 100ms at p99"
-  ],
-  "hints": [
-    "Start by clarifying requirements and estimating scale",
-    "Consider a CDN for static content delivery",
-    "Think about database sharding strategies for horizontal scaling"
-  ],
-  "difficulty": "${difficulty}",
-  "topic": "${topic}",
-  "boilerplate": {}
-}
-
-Include 3-5 constraints (scale/performance requirements) and 4-6 hints (design topics to cover).`;
+Requirements:
+- Include 3-5 constraints (scale/performance requirements with specific numbers, e.g. 10M DAU, 99.99% uptime)
+- Include 4-6 hints (design topics the candidate should cover)
+- Leave examples and boilerplate as empty arrays/objects`;
 }
 
 function buildBehavioralPrompt(difficulty: string, topic: string): string {
   return `You are an experienced engineering manager conducting a behavioral interview.
-Generate a behavioral interview question about "${topic}".
+Generate a behavioral interview question about the topic: ${topic}
 
-Return ONLY a valid JSON object:
-{
-  "title": "The main behavioral question (one sentence, starts with 'Tell me about a time...' or 'Describe a situation...')",
-  "description": "Expanded context: what the interviewer is looking for, STAR method guidance (Situation, Task, Action, Result), and what a strong answer includes. Also list 2-3 likely follow-up questions.",
-  "examples": [],
-  "constraints": [
-    "Strong ownership and accountability",
-    "Measurable results with specific metrics",
-    "Reflection on learnings"
-  ],
-  "hints": [
-    "What was the specific conflict and your role?",
-    "What actions did YOU personally take (not 'we')?",
-    "What was the measurable outcome?"
-  ],
-  "difficulty": "${difficulty}",
-  "topic": "${topic}",
-  "boilerplate": {}
-}`;
+Requirements:
+- Title should be a single question starting with "Tell me about a time..." or "Describe a situation..."
+- Description should include STAR method guidance and 2-3 likely follow-up questions
+- Constraints should list 3 qualities of a strong answer
+- Hints should be 3 probing follow-up questions
+- Leave examples and boilerplate as empty arrays/objects`;
 }
 
 // ── Route handler ──────────────────────────────────────────────────────────
@@ -124,42 +122,39 @@ export async function POST(request: Request) {
     );
   }
 
-  // Build the appropriate prompt
+  const safeTopic = sanitizeTopic(topic);
+
   let prompt: string;
   if (type === "coding") {
-    prompt = buildCodingPrompt(difficulty, topic, language ?? "python", needBoilerplate ?? false);
+    prompt = buildCodingPrompt(
+      difficulty,
+      safeTopic,
+      language ?? "python",
+      needBoilerplate ?? false
+    );
   } else if (type === "system-design") {
-    prompt = buildSystemDesignPrompt(difficulty, topic);
+    prompt = buildSystemDesignPrompt(difficulty, safeTopic);
   } else {
-    prompt = buildBehavioralPrompt(difficulty, topic);
+    prompt = buildBehavioralPrompt(difficulty, safeTopic);
   }
 
   try {
-    const raw = await callClaude(
-      "You are a technical interview question generator. Return only valid JSON, no markdown formatting, no extra text.",
-      prompt,
-      { maxTokens: 2048 }
-    );
+    const parsed = await callClaudeWithTool<
+      InterviewProblem & { boilerplate?: Record<string, string | null> }
+    >("You are a technical interview question generator.", prompt, PROBLEM_TOOL, {
+      maxTokens: 2048,
+    });
 
-    const jsonStr = extractJSON(raw);
-    const parsed = JSON.parse(jsonStr) as InterviewProblem & {
-      boilerplate?: Record<string, string | null>;
-    };
-
-    // Extract boilerplate for the initial editor content
+    // Strip boilerplate from the returned problem and use it for initial editor content
+    const { boilerplate: boilerplateMap, ...problem } = parsed;
     const boilerplate =
-      type === "coding" && parsed.boilerplate
-        ? (parsed.boilerplate[language] ?? "")
-        : "";
-
-    // Strip boilerplate from the problem (it's not part of InterviewProblem)
-    const { boilerplate: _bp, ...problem } = parsed;
-    void _bp;
+      type === "coding" && boilerplateMap ? (boilerplateMap[language] ?? "") : "";
 
     return NextResponse.json({ problem, boilerplate: boilerplate ?? "" });
   } catch (err) {
     console.error("[/api/interview] Error:", err);
-    const message = err instanceof Error ? err.message : "Failed to generate problem";
+    const message =
+      err instanceof Error ? err.message : "Failed to generate problem";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

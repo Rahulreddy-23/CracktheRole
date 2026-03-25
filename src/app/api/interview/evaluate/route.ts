@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { callClaude, extractJSON } from "@/lib/claude";
-import { updateUserStats } from "@/lib/db";
+import { adminDb, FieldValue } from "@/lib/firebase-admin";
+import { callClaudeWithTool } from "@/lib/claude";
 import type { InterviewFeedback, InterviewProblem, ChatMessage } from "@/types";
+
+export const runtime = "nodejs";
 
 interface EvaluateRequest {
   sessionId: string;
@@ -13,6 +13,97 @@ interface EvaluateRequest {
   conversationHistory: Pick<ChatMessage, "role" | "content">[];
   userId: string;
 }
+
+// ── Shared feedback tool schema ──────────────────────────────────────────────
+
+const FEEDBACK_TOOL = {
+  name: "submit_evaluation",
+  description: "Submit the structured interview evaluation result.",
+  input_schema: {
+    type: "object" as const,
+    properties: {
+      overallScore: { type: "integer", description: "Overall score 0-100" },
+      categories: {
+        type: "object",
+        properties: {
+          problemSolving: {
+            type: "object",
+            properties: {
+              score: { type: "integer" },
+              feedback: { type: "string" },
+            },
+            required: ["score", "feedback"],
+          },
+          codeQuality: {
+            type: "object",
+            properties: {
+              score: { type: "integer" },
+              feedback: { type: "string" },
+            },
+            required: ["score", "feedback"],
+          },
+          communication: {
+            type: "object",
+            properties: {
+              score: { type: "integer" },
+              feedback: { type: "string" },
+            },
+            required: ["score", "feedback"],
+          },
+          timeComplexity: {
+            type: "object",
+            properties: {
+              score: { type: "integer" },
+              feedback: { type: "string" },
+            },
+            required: ["score", "feedback"],
+          },
+          edgeCases: {
+            type: "object",
+            properties: {
+              score: { type: "integer" },
+              feedback: { type: "string" },
+            },
+            required: ["score", "feedback"],
+          },
+        },
+        required: [
+          "problemSolving",
+          "codeQuality",
+          "communication",
+          "timeComplexity",
+          "edgeCases",
+        ],
+      },
+      strengths: { type: "array", items: { type: "string" } },
+      improvements: { type: "array", items: { type: "string" } },
+      mistakesLog: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            mistake: { type: "string" },
+            correction: { type: "string" },
+            severity: {
+              type: "string",
+              enum: ["minor", "major", "critical"],
+            },
+          },
+          required: ["mistake", "correction", "severity"],
+        },
+      },
+      summary: { type: "string" },
+    },
+    required: [
+      "overallScore",
+      "categories",
+      "strengths",
+      "improvements",
+      "mistakesLog",
+      "summary",
+    ],
+  },
+};
 
 // ── Prompt builders ──────────────────────────────────────────────────────────
 
@@ -45,52 +136,8 @@ ${code || "(No code submitted)"}
 **Interview Conversation:**
 ${conversation}
 
-Evaluate the candidate's performance and return ONLY a valid JSON object with this exact structure (no markdown, no text outside JSON):
-{
-  "overallScore": <integer 0-100>,
-  "categories": {
-    "problemSolving": {
-      "score": <integer 0-100>,
-      "feedback": "Detailed feedback on problem-solving approach, algorithm choice, and overall solution strategy. Reference specific decisions."
-    },
-    "codeQuality": {
-      "score": <integer 0-100>,
-      "feedback": "Feedback on code structure, naming, readability, modularity, and best practices. Reference specific lines or patterns."
-    },
-    "communication": {
-      "score": <integer 0-100>,
-      "feedback": "How well they articulated their thought process, asked clarifying questions, and explained trade-offs during the interview."
-    },
-    "timeComplexity": {
-      "score": <integer 0-100>,
-      "feedback": "Analysis of time and space complexity of their solution. State the actual Big-O and whether they achieved the optimal complexity."
-    },
-    "edgeCases": {
-      "score": <integer 0-100>,
-      "feedback": "How thoroughly they considered and handled edge cases (empty input, null, overflow, duplicates, etc.)."
-    }
-  },
-  "strengths": [
-    "Specific strength 1 — reference actual code or conversation",
-    "Specific strength 2",
-    "Specific strength 3"
-  ],
-  "improvements": [
-    "Specific improvement 1 with actionable advice",
-    "Specific improvement 2",
-    "Specific improvement 3"
-  ],
-  "mistakesLog": [
-    {
-      "mistake": "Concrete description of the mistake",
-      "correction": "What they should have done instead",
-      "severity": "minor"
-    }
-  ],
-  "summary": "A 2-3 paragraph overall assessment written directly to the candidate (use 'you'). Cover what went well, key areas to work on, and a hiring recommendation (Strong Hire / Hire / Lean No-Hire / No-Hire) with justification."
-}
-
-Scoring guide: 90-100=exceptional, 75-89=strong, 60-74=adequate, 45-59=needs improvement, 0-44=significant gaps.`;
+Scoring guide: 90-100=exceptional, 75-89=strong, 60-74=adequate, 45-59=needs improvement, 0-44=significant gaps.
+Reference specific code or conversation moments in your feedback. Provide a hiring recommendation in the summary (Strong Hire / Hire / Lean No-Hire / No-Hire) with justification.`;
 }
 
 function buildSystemDesignEvalPrompt(
@@ -110,38 +157,8 @@ ${answer || "(No written answer submitted)"}
 **Interview Conversation:**
 ${conversation}
 
-Evaluate and return ONLY a valid JSON object:
-{
-  "overallScore": <integer 0-100>,
-  "categories": {
-    "problemSolving": {
-      "score": <integer 0-100>,
-      "feedback": "Quality of the overall architecture: did they break down the problem correctly, identify core components, and propose a coherent design?"
-    },
-    "codeQuality": {
-      "score": <integer 0-100>,
-      "feedback": "Depth of technical detail: API design, data models, component interfaces, technology choices with justifications."
-    },
-    "communication": {
-      "score": <integer 0-100>,
-      "feedback": "How clearly they explained decisions, responded to follow-up questions, and structured their presentation."
-    },
-    "timeComplexity": {
-      "score": <integer 0-100>,
-      "feedback": "Scalability and performance considerations: did they address bottlenecks, estimate capacity, and propose horizontal/vertical scaling strategies?"
-    },
-    "edgeCases": {
-      "score": <integer 0-100>,
-      "feedback": "Failure modes, trade-offs acknowledged, CAP theorem awareness, data consistency, fault tolerance, and edge cases in the design."
-    }
-  },
-  "strengths": ["Specific strength 1", "Specific strength 2", "Specific strength 3"],
-  "improvements": ["Actionable improvement 1", "Actionable improvement 2", "Actionable improvement 3"],
-  "mistakesLog": [
-    { "mistake": "Design gap or incorrect assumption", "correction": "Better approach", "severity": "minor|major|critical" }
-  ],
-  "summary": "2-3 paragraphs written to the candidate covering architectural quality, key gaps, and a hiring signal (Strong Hire / Hire / Lean No-Hire / No-Hire)."
-}`;
+For the categories: problemSolving=overall architecture quality, codeQuality=technical depth and API/data model design, communication=clarity of explanations, timeComplexity=scalability and performance thinking, edgeCases=fault tolerance and trade-off awareness.
+Provide a hiring signal in the summary (Strong Hire / Hire / Lean No-Hire / No-Hire).`;
 }
 
 function buildBehavioralEvalPrompt(
@@ -160,38 +177,8 @@ ${answer || "(No written answer submitted)"}
 **Interview Conversation:**
 ${conversation}
 
-Evaluate and return ONLY a valid JSON object:
-{
-  "overallScore": <integer 0-100>,
-  "categories": {
-    "problemSolving": {
-      "score": <integer 0-100>,
-      "feedback": "Use of STAR method: did they provide a clear Situation, Task, Action, and Result?"
-    },
-    "codeQuality": {
-      "score": <integer 0-100>,
-      "feedback": "Specificity and credibility: were the examples concrete, recent, and relevant? Did they sound authentic?"
-    },
-    "communication": {
-      "score": <integer 0-100>,
-      "feedback": "Clarity and structure of their answer. Did they stay on point? Did they over-explain or under-explain?"
-    },
-    "timeComplexity": {
-      "score": <integer 0-100>,
-      "feedback": "Impact and ownership: did they demonstrate measurable results and take clear personal ownership (not 'we')?"
-    },
-    "edgeCases": {
-      "score": <integer 0-100>,
-      "feedback": "Reflection and learning: did they show growth mindset, self-awareness, and lessons learned?"
-    }
-  },
-  "strengths": ["Specific strength 1", "Specific strength 2", "Specific strength 3"],
-  "improvements": ["Actionable improvement 1", "Actionable improvement 2", "Actionable improvement 3"],
-  "mistakesLog": [
-    { "mistake": "Weakness in the response", "correction": "How to improve it", "severity": "minor|major|critical" }
-  ],
-  "summary": "2-3 paragraphs written to the candidate. Cover what worked well in their storytelling, what needs sharpening, and a hiring signal."
-}`;
+For the categories: problemSolving=STAR structure quality, codeQuality=specificity and credibility of examples, communication=clarity and structure, timeComplexity=impact and ownership demonstrated, edgeCases=reflection and growth mindset shown.
+Provide a hiring signal in the summary.`;
 }
 
 // ── Route handler ────────────────────────────────────────────────────────────
@@ -204,7 +191,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   }
 
-  const { sessionId, code, interviewType, problem, conversationHistory, userId } = body;
+  const { sessionId, code, interviewType, problem, conversationHistory, userId } =
+    body;
 
   if (!sessionId || !userId || !problem) {
     return NextResponse.json(
@@ -215,49 +203,53 @@ export async function POST(request: Request) {
 
   const conversation = formatConversation(conversationHistory ?? []);
 
-  let prompt: string;
+  let systemPrompt: string;
   if (interviewType === "system-design") {
-    prompt = buildSystemDesignEvalPrompt(problem, code, conversation);
+    systemPrompt = buildSystemDesignEvalPrompt(problem, code, conversation);
   } else if (interviewType === "behavioral") {
-    prompt = buildBehavioralEvalPrompt(problem, code, conversation);
+    systemPrompt = buildBehavioralEvalPrompt(problem, code, conversation);
   } else {
-    prompt = buildCodingEvalPrompt(problem, code, conversation);
+    systemPrompt = buildCodingEvalPrompt(problem, code, conversation);
   }
 
   let feedback: InterviewFeedback;
   try {
-    const raw = await callClaude(
-      "You are a technical interview evaluator. Return only valid JSON, no markdown, no extra text.",
-      prompt,
+    feedback = await callClaudeWithTool<InterviewFeedback>(
+      "You are a technical interview evaluator.",
+      systemPrompt,
+      FEEDBACK_TOOL,
       { maxTokens: 3000 }
     );
-    const jsonStr = extractJSON(raw);
-    feedback = JSON.parse(jsonStr) as InterviewFeedback;
   } catch (err) {
-    console.error("[evaluate] Claude parse error:", err);
+    console.error("[evaluate] Claude error:", err);
     return NextResponse.json(
       { error: "Failed to generate evaluation. Please try again." },
       { status: 502 }
     );
   }
 
-  // Persist to Firestore
+  // Persist to Firestore via Admin SDK (bypasses security rules)
   try {
-    await updateDoc(doc(db, "interviews", sessionId), {
+    await adminDb.collection("interviews").doc(sessionId).update({
       status: "completed",
       feedback,
-      completedAt: serverTimestamp(),
+      completedAt: FieldValue.serverTimestamp(),
       code: code ?? "",
     });
   } catch (err) {
-    console.error("[evaluate] Firestore update error:", err);
-    // Don't fail the request — return feedback even if save fails
+    // TODO: forward to Sentry or equivalent error tracking in production
+    // so that silent failures here don't cause users to lose their interview history.
+    console.error("[evaluate] Firestore update failed — user history not saved:", err);
   }
 
-  // Increment interviewsUsed (fire and forget)
-  updateUserStats(userId, "interviewsUsed").catch((err) =>
-    console.error("[evaluate] updateUserStats failed:", err)
-  );
+  // Increment interviewsUsed (fire and forget, admin SDK)
+  adminDb
+    .collection("users")
+    .doc(userId)
+    .update({ interviewsUsed: FieldValue.increment(1) })
+    .catch((err) =>
+      console.error("[evaluate] interviewsUsed increment failed:", err)
+    );
 
   return NextResponse.json({ feedback });
 }

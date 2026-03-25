@@ -49,3 +49,61 @@ export function extractJSON(text: string): string {
   if (start !== -1 && end !== -1) return text.slice(start, end + 1);
   return text.trim();
 }
+
+interface ClaudeTool {
+  name: string;
+  description: string;
+  input_schema: {
+    type: "object";
+    properties: Record<string, unknown>;
+    required?: string[];
+  };
+}
+
+/**
+ * Calls Claude with Tool Use (function calling), forcing structured JSON output.
+ * The model is required to call `tool.name` — its `input` is returned directly,
+ * eliminating the need for regex JSON extraction and reducing parse failures.
+ */
+export async function callClaudeWithTool<T>(
+  systemPrompt: string,
+  userMessage: string,
+  tool: ClaudeTool,
+  options?: { maxTokens?: number }
+): Promise<T> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not configured");
+
+  const res = await fetch(ANTHROPIC_API_URL, {
+    method: "POST",
+    headers: {
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: options?.maxTokens ?? 4096,
+      system: systemPrompt,
+      tools: [tool],
+      tool_choice: { type: "tool", name: tool.name },
+      messages: [{ role: "user", content: userMessage }],
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.text().catch(() => "(no body)");
+    throw new Error(`Claude API error ${res.status}: ${body}`);
+  }
+
+  const data = (await res.json()) as {
+    content: { type: string; name?: string; input?: unknown }[];
+  };
+
+  const toolUseBlock = data.content.find((b) => b.type === "tool_use");
+  if (!toolUseBlock?.input) {
+    throw new Error(`Claude did not call the tool "${tool.name}"`);
+  }
+
+  return toolUseBlock.input as T;
+}
