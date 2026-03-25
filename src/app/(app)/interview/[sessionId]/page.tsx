@@ -266,14 +266,14 @@ export default function InterviewSessionPage() {
   // ── beforeunload warning ────────────────────────────────────────────────────
 
   useEffect(() => {
-    if (loading || !session) return;
+    if (loading || !session || isEvaluating) return;
     const handler = (e: BeforeUnloadEvent) => {
       e.preventDefault();
       e.returnValue = "You have an interview in progress.";
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
-  }, [loading, session]);
+  }, [loading, session, isEvaluating]);
 
   // ── Load session ────────────────────────────────────────────────────────────
 
@@ -368,11 +368,11 @@ export default function InterviewSessionPage() {
     [sessionId, selectedLanguage, sqlSchema]
   );
 
-  function handleCodeChange(val: string) {
+  const handleCodeChange = useCallback((val: string) => {
     setCode(val);
     scheduleAutoSave(val);
     reset();
-  }
+  }, [scheduleAutoSave, reset]);
 
   // ── Language change ─────────────────────────────────────────────────────────
 

@@ -57,6 +57,23 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const MAX_CODE_LENGTH = 50_000;
+  const MAX_STDIN_LENGTH = 10_000;
+
+  if (code.length > MAX_CODE_LENGTH) {
+    return NextResponse.json(
+      { error: `Code exceeds maximum length of ${MAX_CODE_LENGTH} characters` },
+      { status: 400 }
+    );
+  }
+
+  if (stdin && stdin.length > MAX_STDIN_LENGTH) {
+    return NextResponse.json(
+      { error: `Stdin exceeds maximum length of ${MAX_STDIN_LENGTH} characters` },
+      { status: 400 }
+    );
+  }
+
   // Reject SQL — it's handled client-side via sql.js
   if (language === "sqlite3" || !SUPPORTED_JUDGE0_IDS.has(language)) {
     return NextResponse.json(

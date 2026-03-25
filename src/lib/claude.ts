@@ -1,10 +1,11 @@
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
-const MODEL = "claude-sonnet-4-20250514";
+export const SONNET = "claude-sonnet-4-6";
+export const HAIKU = "claude-haiku-4-5-20251001";
 
 export async function callClaude(
   systemPrompt: string,
   userMessage: string,
-  options?: { maxTokens?: number }
+  options?: { maxTokens?: number; model?: string }
 ): Promise<string> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not configured");
@@ -17,7 +18,7 @@ export async function callClaude(
       "content-type": "application/json",
     },
     body: JSON.stringify({
-      model: MODEL,
+      model: options?.model ?? SONNET,
       max_tokens: options?.maxTokens ?? 4096,
       system: systemPrompt,
       messages: [{ role: "user", content: userMessage }],
@@ -69,7 +70,7 @@ export async function callClaudeWithTool<T>(
   systemPrompt: string,
   userMessage: string,
   tool: ClaudeTool,
-  options?: { maxTokens?: number }
+  options?: { maxTokens?: number; model?: string }
 ): Promise<T> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not configured");
@@ -82,7 +83,7 @@ export async function callClaudeWithTool<T>(
       "content-type": "application/json",
     },
     body: JSON.stringify({
-      model: MODEL,
+      model: options?.model ?? SONNET,
       max_tokens: options?.maxTokens ?? 4096,
       system: systemPrompt,
       tools: [tool],

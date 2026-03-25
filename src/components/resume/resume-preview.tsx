@@ -56,6 +56,7 @@ const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
           ref={ref}
           className={cn(
             "bg-zinc-900/60 rounded-xl p-8 text-sm leading-relaxed font-sans print:bg-white print:text-black print:rounded-none print:p-0",
+            "**:print:text-black **:print:border-zinc-300",
             className
           )}
         >
@@ -69,9 +70,9 @@ const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
                 {personalInfo.email && <span>{personalInfo.email}</span>}
                 {personalInfo.phone && <><span className="text-white/20 print:text-zinc-300">·</span><span>{personalInfo.phone}</span></>}
                 {personalInfo.location && <><span className="text-white/20 print:text-zinc-300">·</span><span>{personalInfo.location}</span></>}
-                {personalInfo.linkedin && <><span className="text-white/20 print:text-zinc-300">·</span><a href={personalInfo.linkedin} className="text-blue-400 hover:underline print:text-blue-700">{personalInfo.linkedin.replace(/^https?:\/\/(www\.)?/, "")}</a></>}
-                {personalInfo.github && <><span className="text-white/20 print:text-zinc-300">·</span><a href={personalInfo.github} className="text-blue-400 hover:underline print:text-blue-700">{personalInfo.github.replace(/^https?:\/\/(www\.)?/, "")}</a></>}
-                {personalInfo.portfolio && <><span className="text-white/20 print:text-zinc-300">·</span><a href={personalInfo.portfolio} className="text-blue-400 hover:underline print:text-blue-700">{personalInfo.portfolio.replace(/^https?:\/\/(www\.)?/, "")}</a></>}
+                {personalInfo.linkedin && <><span className="text-white/20 print:text-zinc-300">·</span><a href={personalInfo.linkedin} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline print:text-blue-700 print:no-underline">{personalInfo.linkedin.replace(/^https?:\/\/(www\.)?/, "")}</a></>}
+                {personalInfo.github && <><span className="text-white/20 print:text-zinc-300">·</span><a href={personalInfo.github} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline print:text-blue-700 print:no-underline">{personalInfo.github.replace(/^https?:\/\/(www\.)?/, "")}</a></>}
+                {personalInfo.portfolio && <><span className="text-white/20 print:text-zinc-300">·</span><a href={personalInfo.portfolio} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline print:text-blue-700 print:no-underline">{personalInfo.portfolio.replace(/^https?:\/\/(www\.)?/, "")}</a></>}
               </div>
             </div>
           )}
@@ -158,7 +159,7 @@ const ResumePreview = forwardRef<HTMLDivElement, ResumePreviewProps>(
                     <div className="flex items-center gap-2">
                       <p className="font-semibold print:text-black">{proj.name}</p>
                       {proj.link && (
-                        <a href={proj.link} className="text-xs text-blue-400 hover:underline print:text-blue-700">
+                        <a href={proj.link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-400 hover:underline print:text-blue-700 print:no-underline">
                           {proj.link.replace(/^https?:\/\/(www\.)?/, "")}
                         </a>
                       )}

@@ -42,6 +42,7 @@ export default function DownloadGate({
   isPaidDownload,
 }: DownloadGateProps) {
   const [open, setOpen] = useState(false);
+  const [localPaid, setLocalPaid] = useState(isPaidDownload);
   const { purchase, isProcessing } = usePayment();
   const { userProfile } = useAuth();
 
@@ -58,6 +59,7 @@ export default function DownloadGate({
       // Mark this specific resume as paid (for starter pack; Pro grants globally)
       if (packType === "starter_pack") {
         await markResumeAsPaid(resumeId);
+        setLocalPaid(true);
       }
       setOpen(false);
       triggerDownload();
@@ -68,7 +70,7 @@ export default function DownloadGate({
   const effectivelyPro = isPro || userProfile?.plan === "pro";
 
   // Already paid or on Pro plan → direct download
-  if (effectivelyPro || isPaidDownload) {
+  if (effectivelyPro || localPaid) {
     return (
       <Button onClick={triggerDownload} className="gap-2">
         <Download className="w-4 h-4" />

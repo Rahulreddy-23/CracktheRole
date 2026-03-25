@@ -21,33 +21,34 @@ import type { InterviewSession, ResumeData } from "@/types";
 
 export async function createUserDocument(user: FirebaseUser) {
   const ref = doc(db, "users", user.uid);
-  const snap = await getDoc(ref);
 
-  if (!snap.exists()) {
-    // ── First-time sign-up: write the full document ──────────────────────
-    await setDoc(ref, {
+  // Always merge login metadata — safe for both new users and re-logins.
+  // Using setDoc+merge avoids the getDoc+conditional-setDoc race condition
+  // when multiple tabs sign in simultaneously.
+  await setDoc(
+    ref,
+    {
       uid: user.uid,
-      email: user.email,
-      displayName: user.displayName,
-      photoURL: user.photoURL,
-      phoneNumber: user.phoneNumber,
+      email: user.email ?? null,
+      displayName: user.displayName ?? null,
+      photoURL: user.photoURL ?? null,
+      phoneNumber: user.phoneNumber ?? null,
+      lastLoginAt: serverTimestamp(),
+    },
+    { merge: true }
+  );
+
+  // Set free-tier defaults only on first sign-up (no plan field yet).
+  // Never overwrites plan/limits set by payment activation.
+  const snap = await getDoc(ref);
+  if (snap.exists() && !snap.data().plan) {
+    await updateDoc(ref, {
       plan: "free",
       interviewsUsed: 0,
       resumesUsed: 0,
-      interviewsLimit: 1,  // free tier: 1 interview
-      resumesLimit: 1,     // free tier: preview only, no download
+      interviewsLimit: 1,
+      resumesLimit: 1,
       createdAt: serverTimestamp(),
-      lastLoginAt: serverTimestamp(),
-    });
-  } else {
-    // ── Re-login: only update mutable profile fields ─────────────────────
-    // Never touch plan, interviewsUsed, resumesUsed, or limit fields here.
-    await updateDoc(ref, {
-      ...(user.email       && { email: user.email }),
-      ...(user.displayName && { displayName: user.displayName }),
-      ...(user.photoURL    && { photoURL: user.photoURL }),
-      ...(user.phoneNumber && { phoneNumber: user.phoneNumber }),
-      lastLoginAt: serverTimestamp(),
     });
   }
 }

@@ -4,6 +4,7 @@ import { callClaudeWithTool } from "@/lib/claude";
 import type { InterviewFeedback, InterviewProblem, ChatMessage } from "@/types";
 
 export const runtime = "nodejs";
+export const maxDuration = 60;
 
 interface EvaluateRequest {
   sessionId: string;

@@ -14,17 +14,27 @@ service cloud.firestore {
     }
     match /interviews/{interviewId} {
       allow read: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Require a valid timestamp on create to prevent arbitrary document injection.
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.startedAt is timestamp;
       allow update: if request.auth != null && resource.data.userId == request.auth.uid;
     }
     match /resumes/{resumeId} {
       allow read: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow update: if request.auth != null && resource.data.userId == request.auth.uid;
+      // Require a valid timestamp on create to prevent arbitrary document injection.
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.updatedAt is timestamp;
+      allow update: if request.auth != null && resource.data.userId == request.auth.uid
+                    // Prevent client from self-granting paid download access.
+                    && !request.resource.data.diff(resource.data).affectedKeys()
+                        .hasAny(['isPaidDownload']);
     }
     match /payments/{paymentId} {
       allow read: if request.auth != null && resource.data.userId == request.auth.uid;
-      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      // Payments are only ever written by the Admin SDK in /api/payments/verify.
+      allow create, update: if false;
     }
   }
 }

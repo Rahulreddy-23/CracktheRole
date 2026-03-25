@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { LANGUAGE_CONFIG, type CodeExecutionResult, type SupportedLanguage } from "@/types";
 
 const EXECUTION_TIMEOUT_MS = 15_000; // 15 s — Judge0 CE is sometimes slow
@@ -97,7 +97,7 @@ export function useCodeExecution() {
     }
   };
 
-  const reset = () => setResult(null);
+  const reset = useCallback(() => setResult(null), []);
 
   return { execute, isRunning, result, reset };
 }

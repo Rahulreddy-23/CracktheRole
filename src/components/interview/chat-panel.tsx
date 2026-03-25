@@ -78,6 +78,11 @@ export default function ChatPanel({
     setIsTyping(true);
 
     try {
+      const MAX_HISTORY_MESSAGES = 12;
+      const trimmedHistory = updatedMessages
+        .slice(-MAX_HISTORY_MESSAGES)
+        .map((m) => ({ role: m.role, content: m.content }));
+
       const res = await fetch("/api/interview/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -85,11 +90,7 @@ export default function ChatPanel({
           sessionId,
           message: text,
           code,
-          // Only real user/assistant turns — Claude API requires starting with user role
-          conversationHistory: updatedMessages.map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
+          conversationHistory: trimmedHistory,
           problemContext,
           interviewType,
         }),

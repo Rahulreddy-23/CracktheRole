@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { callClaude } from "@/lib/claude";
+import { callClaude, HAIKU } from "@/lib/claude";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       ? `Context (job/role): ${context}\n\nContent to enhance:\n${content}`
       : content;
 
-    const enhanced = await callClaude(systemPrompt, userMessage, { maxTokens: 2048 });
+    const enhanced = await callClaude(systemPrompt, userMessage, { maxTokens: 2048, model: HAIKU });
 
     if (section === "bullets") {
       try {

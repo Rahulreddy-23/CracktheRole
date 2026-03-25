@@ -1,16 +1,15 @@
 import type { NextConfig } from "next";
+import bundleAnalyzer from '@next/bundle-analyzer';
 
-const withBundleAnalyzer = require('@next/bundle-analyzer')({
+const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
 });
 
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "**",
-      },
+      { protocol: "https", hostname: "lh3.googleusercontent.com" },    // Google profile pics
+      { protocol: "https", hostname: "firebasestorage.googleapis.com" }, // Firebase Storage
     ],
   },
   async headers() {

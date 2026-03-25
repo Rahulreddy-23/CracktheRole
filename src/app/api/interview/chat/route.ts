@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { doc, updateDoc, arrayUnion } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { adminDb, FieldValue } from "@/lib/firebase-admin";
+import { SONNET } from "@/lib/claude";
 
 const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
-const MODEL = "claude-sonnet-4-20250514";
 
 interface ConversationMessage {
   role: "user" | "assistant";
@@ -83,7 +82,7 @@ export async function POST(request: Request) {
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: MODEL,
+        model: SONNET,
         max_tokens: 1024,
         system: systemPrompt,
         messages,
@@ -121,8 +120,8 @@ export async function POST(request: Request) {
       timestamp: new Date(),
     };
 
-    updateDoc(doc(db, "interviews", sessionId), {
-      messages: arrayUnion(userEntry, assistantEntry),
+    adminDb.collection("interviews").doc(sessionId).update({
+      messages: FieldValue.arrayUnion(userEntry, assistantEntry),
     }).catch((err) => console.error("[chat] Firestore update failed:", err));
 
     return NextResponse.json({ reply });

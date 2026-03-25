@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { callClaude } from "@/lib/claude";
+import { callClaude, HAIKU } from "@/lib/claude";
 import type { InterviewProblem } from "@/types";
 
 interface BoilerplateRequest {
@@ -80,7 +80,7 @@ Return ONLY the code, no explanations outside of code comments.`;
     const raw = await callClaude(
       "You are a code boilerplate generator. Return only the code with no markdown fences, no extra explanations.",
       prompt,
-      { maxTokens: 1500 }
+      { maxTokens: 1500, model: HAIKU }
     );
 
     return NextResponse.json({ boilerplate: stripCodeFences(raw) });

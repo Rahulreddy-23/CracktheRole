@@ -55,12 +55,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (firebaseUser) {
           setUser(firebaseUser);
 
-          // Fetch or create the Firestore profile
-          let profile = await getUserDocument(firebaseUser.uid);
-          if (!profile) {
-            await createUserDocument(firebaseUser);
-            profile = await getUserDocument(firebaseUser.uid);
-          }
+          // Ensure profile exists (handles both new users and re-logins atomically)
+          await createUserDocument(firebaseUser);
+          const profile = await getUserDocument(firebaseUser.uid);
           setUserProfile(profile as User | null);
         } else {
           setUser(null);

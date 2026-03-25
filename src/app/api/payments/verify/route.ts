@@ -109,10 +109,11 @@ export async function POST(req: NextRequest) {
       .get();
 
     if (!existingPayment.empty) {
-      return NextResponse.json(
-        { error: "Order already fulfilled" },
-        { status: 409 }
-      );
+      // Already processed — idempotent success, don't re-activate
+      return NextResponse.json({
+        success: true,
+        updatedPlan: { note: "Payment was already processed" },
+      });
     }
 
     // ── Fetch authoritative amount from Razorpay — never trust client payload ──

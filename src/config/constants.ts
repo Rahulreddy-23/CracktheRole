@@ -119,6 +119,4 @@ export const INTERVIEW_TOPICS = {
   ],
 };
 
-// Judge0 CE endpoint (public instance — set JUDGE0_API_URL in .env.local for production)
-export const JUDGE0_API_URL = process.env.JUDGE0_API_URL ?? "https://ce.judge0.com";
 
