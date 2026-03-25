@@ -5,8 +5,11 @@ export interface User {
   photoURL: string | null;
   phoneNumber: string | null;
   plan: "free" | "pro";
-  interviewsCompleted: number;
-  resumesBuilt: number;
+  interviewsUsed: number;
+  resumesUsed: number;
+  interviewsLimit: number;
+  resumesLimit: number;
+  planExpiresAt?: Date;
   createdAt: Date;
 }
 
@@ -25,6 +28,7 @@ export interface InterviewSession {
   feedback?: InterviewFeedback;
   startedAt: Date;
   completedAt?: Date;
+  maxDurationMinutes: number;
 }
 
 export interface InterviewProblem {
@@ -48,9 +52,11 @@ export interface CodeExecutionResult {
   stdout: string | null;
   stderr: string | null;
   compile_output: string | null;
-  status: { id: number; description: string };
-  time: string | null;
-  memory: number | null;
+  status: string;
+  executionTime: string | null;
+  memoryUsed: number | null;
+  language: string;
+  version: string;
 }
 
 export interface InterviewFeedback {
@@ -106,6 +112,7 @@ export interface ResumeData {
     link?: string;
   }[];
   certifications: { name: string; issuer: string; date: string }[];
+  isPaidDownload: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -120,22 +127,25 @@ export type SupportedLanguage =
   | "csharp"
   | "sql"
   | "go"
-  | "rust"
-  | "swift";
+  | "rust";
 
+// Judge0 CE language config — judge0Id maps to Judge0 CE language IDs
+// https://ce.judge0.com/languages/
 export const LANGUAGE_CONFIG: Record<
   SupportedLanguage,
-  { id: number; name: string; monacoId: string; extension: string }
+  { judge0Id: string; judge0Version: string; name: string; monacoId: string; extension: string }
 > = {
-  python: { id: 71, name: "Python 3", monacoId: "python", extension: "py" },
-  javascript: { id: 63, name: "JavaScript", monacoId: "javascript", extension: "js" },
-  typescript: { id: 74, name: "TypeScript", monacoId: "typescript", extension: "ts" },
-  java: { id: 62, name: "Java", monacoId: "java", extension: "java" },
-  c: { id: 50, name: "C (GCC)", monacoId: "c", extension: "c" },
-  cpp: { id: 54, name: "C++ (GCC)", monacoId: "cpp", extension: "cpp" },
-  csharp: { id: 51, name: "C#", monacoId: "csharp", extension: "cs" },
-  sql: { id: 82, name: "SQL", monacoId: "sql", extension: "sql" },
-  go: { id: 60, name: "Go", monacoId: "go", extension: "go" },
-  rust: { id: 73, name: "Rust", monacoId: "rust", extension: "rs" },
-  swift: { id: 83, name: "Swift", monacoId: "swift", extension: "swift" },
+  python:     { judge0Id: "python",     judge0Version: "3.10.0",  name: "Python 3",    monacoId: "python",     extension: "py"   },
+  javascript: { judge0Id: "javascript", judge0Version: "18.15.0", name: "JavaScript",  monacoId: "javascript", extension: "js"   },
+  typescript: { judge0Id: "typescript", judge0Version: "5.0.3",   name: "TypeScript",  monacoId: "typescript", extension: "ts"   },
+  java:       { judge0Id: "java",       judge0Version: "15.0.2",  name: "Java",        monacoId: "java",       extension: "java" },
+  c:          { judge0Id: "c",          judge0Version: "10.2.0",  name: "C (GCC)",     monacoId: "c",          extension: "c"    },
+  cpp:        { judge0Id: "c++",        judge0Version: "10.2.0",  name: "C++ (GCC)",   monacoId: "cpp",        extension: "cpp"  },
+  csharp:     { judge0Id: "csharp",     judge0Version: "6.12.0",  name: "C#",          monacoId: "csharp",     extension: "cs"   },
+  sql:        { judge0Id: "sqlite3",    judge0Version: "browser", name: "SQL (SQLite)", monacoId: "sql",       extension: "sql"  },
+  go:         { judge0Id: "go",         judge0Version: "1.16.2",  name: "Go",          monacoId: "go",         extension: "go"   },
+  rust:       { judge0Id: "rust",       judge0Version: "1.68.2",  name: "Rust",        monacoId: "rust",       extension: "rs"   },
 };
+
+// NOTE: SQL uses sql.js (SQLite compiled to WebAssembly) running in the browser.
+// judge0Version "browser" is a sentinel — SQL never reaches the Judge0 endpoint.

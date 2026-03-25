@@ -1,10 +1,15 @@
 import type { Metadata } from "next";
-import { DM_Sans, JetBrains_Mono, Geist } from "next/font/google";
+import { DM_Sans, JetBrains_Mono } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import Providers from "./providers";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const dmSans = DM_Sans({
+  variable: "--font-sans",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
 
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono",
@@ -26,10 +31,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", jetbrainsMono.variable, "font-sans", geist.variable)}
+      className={cn("h-full", "antialiased", dmSans.variable, jetbrainsMono.variable)}
     >
       <body className="min-h-full flex flex-col">
-        {children}
+        <Providers>
+          {children}
+        </Providers>
         <Toaster theme="dark" richColors />
       </body>
     </html>
