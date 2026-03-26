@@ -20,29 +20,12 @@ function formatBytes(bytes: number) {
 }
 
 async function extractText(file: File): Promise<string> {
-  // For .txt files use FileReader directly
-  if (file.type === "text/plain" || file.name.endsWith(".txt")) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target?.result as string ?? "");
-      reader.onerror = reject;
-      reader.readAsText(file);
-    });
-  }
-
-  // For PDF and DOCX: read as data URL and extract what we can via text
-  // The server-side API will handle binary parsing; we pass the raw text
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const result = e.target?.result as string ?? "";
-      // Strip binary noise — keep only printable ASCII/UTF-8 chars
-      const cleaned = result.replace(/[^\x20-\x7E\n\r\t\u00A0-\uFFFF]/g, " ").replace(/\s{3,}/g, "\n");
-      resolve(cleaned.slice(0, 20000));
-    };
-    reader.onerror = reject;
-    reader.readAsText(file, "utf-8");
-  });
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch("/api/resume/parse-file", { method: "POST", body: form });
+  if (!res.ok) throw new Error(`Server returned ${res.status}`);
+  const { text } = (await res.json()) as { text: string };
+  return text ?? "";
 }
 
 export default function UploadZone({ onFileRead, className }: UploadZoneProps) {

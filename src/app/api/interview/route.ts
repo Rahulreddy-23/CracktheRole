@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { callClaudeWithTool } from "@/lib/claude";
+import { adminDb, verifyAuthToken } from "@/lib/firebase-admin";
 import type { InterviewProblem } from "@/types";
 
 // ── Tool schema ────────────────────────────────────────────────────────────
@@ -96,7 +97,16 @@ Requirements:
 
 // ── Route handler ──────────────────────────────────────────────────────────
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  // Verify auth token
+  let userId: string;
+  try {
+    const token = request.headers.get("authorization")?.replace("Bearer ", "").trim();
+    userId = await verifyAuthToken(token);
+  } catch {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   let body: {
     type: string;
     difficulty: string;
@@ -111,6 +121,23 @@ export async function POST(request: Request) {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+  }
+
+  // Server-side interview limit check
+  try {
+    const userDoc = await adminDb.collection("users").doc(userId).get();
+    const data = userDoc.data();
+    const interviewsUsed: number = data?.interviewsUsed ?? 0;
+    const interviewsLimit: number = data?.interviewsLimit ?? 1;
+    if (interviewsUsed >= interviewsLimit) {
+      return NextResponse.json(
+        { error: "Interview limit reached. Please upgrade to continue." },
+        { status: 429 }
+      );
+    }
+  } catch {
+    // If Firestore check fails, don't block the user — log and continue
+    console.error("[/api/interview] Failed to check interview limit");
   }
 
   const { type, difficulty, topic, language, needBoilerplate } = body;

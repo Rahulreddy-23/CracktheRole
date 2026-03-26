@@ -229,9 +229,13 @@ export default function InterviewPage() {
         : topic;
 
     try {
+      const token = await user.getIdToken();
       const res = await fetch("/api/interview", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          "authorization": `Bearer ${token}`,
+        },
         body: JSON.stringify({
           type,
           difficulty,

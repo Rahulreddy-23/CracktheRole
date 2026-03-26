@@ -137,6 +137,11 @@ function ProfileTab() {
   const [displayName, setDisplayName] = useState(user?.displayName ?? "");
   const [savingName, setSavingName] = useState(false);
 
+  // Email (for phone-auth users who have no email on their auth account)
+  const [email, setEmail] = useState(userProfile?.email ?? user?.email ?? "");
+  const [savingEmail, setSavingEmail] = useState(false);
+  const canEditEmail = !user?.email;
+
   // Password change
   const [currentPw, setCurrentPw] = useState("");
   const [newPw, setNewPw] = useState("");
@@ -169,6 +174,25 @@ function ProfileTab() {
       toast.error("Failed to update name.");
     } finally {
       setSavingName(false);
+    }
+  };
+
+  const handleSaveEmail = async () => {
+    if (!user || !email.trim()) return;
+    const trimmed = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+    setSavingEmail(true);
+    try {
+      await updateDoc(doc(db, "users", user.uid), { email: trimmed });
+      await refreshProfile();
+      toast.success("Email saved!");
+    } catch {
+      toast.error("Failed to save email.");
+    } finally {
+      setSavingEmail(false);
     }
   };
 
@@ -252,7 +276,27 @@ function ProfileTab() {
 
         <div className="space-y-1.5">
           <Label className="text-xs text-muted-foreground">Email</Label>
-          <Input value={user?.email ?? ""} disabled className="bg-white/3 border-white/10 opacity-60" />
+          {canEditEmail ? (
+            <div className="flex gap-2">
+              <Input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com"
+                type="email"
+                className="bg-white/3 border-white/10"
+              />
+              <Button
+                onClick={handleSaveEmail}
+                disabled={savingEmail || !email.trim() || email.trim().toLowerCase() === (userProfile?.email ?? "")}
+                size="sm"
+                className="shrink-0"
+              >
+                {savingEmail ? "Saving…" : "Save"}
+              </Button>
+            </div>
+          ) : (
+            <Input value={user?.email ?? ""} disabled className="bg-white/3 border-white/10 opacity-60" />
+          )}
         </div>
 
         {userProfile?.phoneNumber && (
